@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kavach · Guardrail Gateway</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a0e13;
+      --panel: #111820;
+      --line: #243040;
+      --text: #e8eef4;
+      --muted: #8b9aab;
+      --accent: #3b82f6;
+      --ok: #3dd68c;
+      --bad: #e5484d;
+      --warn: #f5a524;
+      --font: "DM Sans", system-ui, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(900px 420px at 12% -10%, rgba(59, 130, 246, 0.18), transparent 55%),
+        radial-gradient(700px 380px at 90% 0%, rgba(61, 214, 140, 0.08), transparent 50%),
+        var(--bg);
+    }
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 2.25rem 1.25rem 4rem;
+    }
+    .brand {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.55rem;
+    }
+    h1 {
+      font-size: clamp(1.7rem, 3vw, 2.2rem);
+      margin: 0 0 0.4rem;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0 0 1.5rem;
+      max-width: 36rem;
+      line-height: 1.45;
+    }
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid var(--line);
+      background: rgba(17, 24, 32, 0.85);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .pill strong { color: var(--text); font-weight: 600; }
+    .dot { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--muted); }
+    .dot.on { background: var(--ok); }
+    .dot.off { background: var(--bad); }
+    .layout {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 820px) {
+      .layout { grid-template-columns: 0.95fr 1.05fr; align-items: start; }
+    }
+    .panel {
+      background: rgba(17, 24, 32, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.15rem 1.2rem 1.25rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.9rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0 0 0.35rem;
+    }
+    .field + .field { margin-top: 0.85rem; }
+    select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0b1017;
+      color: var(--text);
+      padding: 0.72rem 0.85rem;
+      font-size: 0.98rem;
+      font-family: inherit;
+    }
+    select:focus, button:focus {
+      outline: 2px solid rgba(59, 130, 246, 0.45);
+      outline-offset: 1px;
+    }
+    .actions { margin-top: 1rem; display: grid; gap: 0.55rem; }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.ghost {
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .tip {
+      margin-top: 1rem;
+      padding: 0.75rem 0.85rem;
+      border-left: 3px solid var(--accent);
+      background: rgba(59, 130, 246, 0.08);
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+    .tip strong { color: var(--text); }
+    #outcome {
+      border-radius: 10px;
+      padding: 0.85rem 0.95rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--line);
+      background: #0b1017;
+    }
+    #outcome.idle { color: var(--muted); }
+    #outcome.ok { border-color: rgba(61, 214, 140, 0.45); color: #d7f5e5; }
+    #outcome.bad { border-color: rgba(229, 72, 77, 0.5); color: #ffd5d7; }
+    #outcome.warn { border-color: rgba(245, 165, 36, 0.5); color: #fde7c3; }
+    #outcome .title { font-weight: 700; font-size: 1.02rem; margin-bottom: 0.2rem; }
+    #outcome .detail { font-size: 0.88rem; opacity: 0.9; }
+    #meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem;
+      margin-bottom: 1rem;
+      font-size: 0.82rem;
+    }
+    #meta div {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.55rem 0.65rem;
+      background: #0b1017;
+    }
+    #meta span { display: block; color: var(--muted); font-size: 0.72rem; margin-bottom: 0.15rem; }
+    #story {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 22rem;
+      overflow: auto;
+    }
+    #story li {
+      padding: 0.55rem 0;
+      border-bottom: 1px solid rgba(36, 48, 64, 0.8);
+    }
+    #story li:last-child { border-bottom: 0; }
+    #story .step-title { font-weight: 600; font-size: 0.92rem; }
+    #story .step-detail {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 0.2rem;
+      line-height: 1.45;
+      font-family: var(--mono);
+      white-space: pre-wrap;
+    }
+    .empty { color: var(--muted); font-size: 0.9rem; }
+    footer {
+      margin-top: 1.25rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <main>
+    <div class="brand">Kavach</div>
+    <h1>Guardrail Gateway</h1>
+    <p class="lede">The kernel decides first. Razorpay Checkout opens only when payment is allowed.</p>
+
+    <div class="status-row" id="statusRow">
+      <div class="pill"><span class="dot" id="railDot"></span> Rail <strong id="railLabel">…</strong></div>
+      <div class="pill">LLM <strong id="llmLabel">…</strong></div>
+      <div class="pill">API <strong>localhost:8080</strong></div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Run a checkout</h2>
+        <div class="field">
+          <label for="seller">Seller / attack</label>
+          <select id="seller"></select>
+        </div>
+        <div class="field">
+          <label for="rails">Guardrails</label>
+          <select id="rails">
+            <option value="true">ON — block unsafe checkout</option>
+            <option value="false">OFF — allow attacks through</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button id="go" class="primary" type="button">Authorize checkout</button>
+          <button id="health" class="ghost" type="button">Refresh status</button>
+        </div>
+        <div class="tip">
+          <strong>Best demo:</strong> seller_04 (bait-and-switch) with guardrails <strong>ON</strong> → expect GR-9 refuse.
+          Flip to <strong>OFF</strong> → Razorpay Checkout should open.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Result</h2>
+        <div id="outcome" class="idle">
+          <div class="title">Ready</div>
+          <div class="detail">Pick a seller and press Authorize.</div>
+        </div>
+        <div id="meta" hidden></div>
+        <ol id="story"><li class="empty">Story steps appear here after a run.</li></ol>
+      </section>
+    </div>
+
+    <footer>
+      Also: <a href="/health">/health</a> · <a href="/v1/sellers">/v1/sellers</a> · <a href="/docs">/docs</a>
+    </footer>
+  </main>
+
+  <script>
+    const DEFAULT_SELLER = "{{SELLER_ID}}";
+    const DEFAULT_RAILS = {{GUARDRAILS}};
+    const SELLER_FALLBACK = [
+      { id: "seller_01", label: "seller_01 · Honest counterparty" },
+      { id: "seller_02", label: "seller_02 · A-1 direct injection" },
+      { id: "seller_03", label: "seller_03 · A-2 negotiation injection" },
+      { id: "seller_04", label: "seller_04 · A-3 bait-and-switch" },
+      { id: "seller_05", label: "seller_05 · A-4 false spec" },
+      { id: "seller_06", label: "seller_06 · A-5 budget extraction" },
+      { id: "seller_07", label: "seller_07 · A-6 sybil reviews" },
+      { id: "seller_08", label: "seller_08 · A-7 cart injection" },
+      { id: "seller_09", label: "seller_09 · A-8 loop exhaustion" },
+    ];
+
+    const sellerEl = document.getElementById("seller");
+    const railsEl = document.getElementById("rails");
+    const outcomeEl = document.getElementById("outcome");
+    const storyEl = document.getElementById("story");
+    const metaEl = document.getElementById("meta");
+
+    function fillSellers(items) {
+      sellerEl.innerHTML = "";
+      items.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.label;
+        sellerEl.appendChild(opt);
+      });
+      sellerEl.value = DEFAULT_SELLER;
+      if (!sellerEl.value) sellerEl.value = items[0]?.id || "seller_04";
+    }
+
+    function setOutcome(kind, title, detail) {
+      outcomeEl.className = kind;
+      outcomeEl.innerHTML = `<div class="title">${title}</div><div class="detail">${detail || ""}</div>`;
+    }
+
+    function setMeta(rows) {
+      if (!rows || !rows.length) {
+        metaEl.hidden = true;
+        metaEl.innerHTML = "";
+        return;
+      }
+      metaEl.hidden = false;
+      metaEl.innerHTML = rows.map(([k, v]) => `<div><span>${k}</span>${v || "—"}</div>`).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function setStory(steps) {
+      if (!steps || !steps.length) {
+        storyEl.innerHTML = `<li class="empty">No story steps.</li>`;
+        return;
+      }
+      storyEl.innerHTML = steps.map((s) => {
+        const title = escapeHtml((s.title || "").replace(/^\d+[a-z]?\. /, ""));
+        const detail = s.detail ? `<div class="step-detail">${escapeHtml(s.detail)}</div>` : "";
+        return `<li><div class="step-title">${title}</div>${detail}</li>`;
+      }).join("");
+    }
+
+    async function refreshHealth() {
+      const res = await fetch("/health");
+      const data = await res.json();
+      document.getElementById("railLabel").textContent = data.payment_label || data.payment_rail;
+      document.getElementById("llmLabel").textContent = data.llm || "—";
+      const dot = document.getElementById("railDot");
+      dot.className = "dot " + (data.payment_rail === "razorpay" ? "on" : "off");
+      return data;
+    }
+
+    async function loadSellers() {
+      try {
+        const res = await fetch("/v1/sellers");
+        const data = await res.json();
+        const items = (data.sellers || []).map((s) => ({
+          id: s.id,
+          label: s.attack_class ? `${s.id} · ${s.attack_class}` : `${s.id} · clean`,
+        }));
+        fillSellers(items.length ? items : SELLER_FALLBACK);
+      } catch {
+        fillSellers(SELLER_FALLBACK);
+      }
+    }
+
+    document.getElementById("health").onclick = async () => {
+      const data = await refreshHealth();
+      setOutcome("idle", "Gateway healthy", data.payment_label + " · " + data.llm);
+      setMeta([
+        ["Payment rail", data.payment_rail],
+        ["Guardrails default", String(data.guardrails_default)],
+        ["LLM", data.llm],
+        ["OK", String(data.ok)],
+      ]);
+    };
+
+    document.getElementById("go").onclick = async () => {
+      const btn = document.getElementById("go");
+      btn.disabled = true;
+      setOutcome("idle", "Authorizing…", "Kernel is negotiating and checking the cart.");
+      setMeta([]);
+      storyEl.innerHTML = `<li class="empty">Running…</li>`;
+      try {
+        const res = await fetch("/v1/checkout/authorize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            goal: "Find a wireless audio product",
+            budget: 15000,
+            seller_id: sellerEl.value,
+            guardrails: railsEl.value === "true",
+          }),
+        });
+        const data = await res.json();
+        setStory(data.story || []);
+        setMeta([
+          ["Product", data.product_title],
+          ["Attack", data.attack_class || "clean"],
+          ["Guardrails", data.guardrails ? "ON" : "OFF"],
+          ["Amount", data.amount_minor ? `₹${(data.amount_minor / 100).toFixed(2)}` : "—"],
+        ]);
+
+        if (!data.allowed) {
+          setOutcome("bad", "REFUSED · " + (data.refusal_rule || "blocked"), data.message || "Kernel blocked checkout. Razorpay was not called.");
+          return;
+        }
+        if (!data.razorpay_order_id) {
+          setOutcome("ok", "ALLOWED · simulated ledger", data.message || "Settled without Razorpay.");
+          return;
+        }
+        setOutcome("warn", "Kernel allowed", "Opening Razorpay Checkout…");
+        const options = {
+          key: data.razorpay_key_id,
+          amount: data.amount_minor,
+          currency: data.currency || "INR",
+          name: "Kavach",
+          description: data.product_title || "Guardrail-cleared checkout",
+          order_id: data.razorpay_order_id,
+          handler: async function (response) {
+            const confirm = await fetch("/v1/checkout/confirm", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            const settled = await confirm.json();
+            if (!confirm.ok) {
+              setOutcome("bad", "Capture failed", settled.detail || JSON.stringify(settled));
+              return;
+            }
+            setOutcome("ok", "SETTLED via Razorpay", `Order ${settled.kavach_order_id} · ${settled.state}`);
+            setMeta([
+              ["Kavach order", settled.kavach_order_id],
+              ["State", settled.state],
+              ["Razorpay order", data.razorpay_order_id],
+              ["Payment", response.razorpay_payment_id],
+            ]);
+          },
+          theme: { color: "#3b82f6" },
+        };
+        const rzp = new Razorpay(options);
+        rzp.on("payment.failed", (resp) => {
+          setOutcome("bad", "Payment failed", (resp.error && resp.error.description) || "Checkout failed");
+        });
+        rzp.open();
+      } catch (err) {
+        setOutcome("bad", "Request failed", String(err));
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    railsEl.value = String(DEFAULT_RAILS);
+    loadSellers();
+    refreshHealth().catch(() => {});
+  </script>
+</body>
+</html>
