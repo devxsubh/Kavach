@@ -11,6 +11,7 @@ from textual.widgets import Footer, Header, RichLog, Static
 
 from ..adversarial.attacks import ATTACKS
 from ..agents import KavachRun
+from ..agents.roster import DEFAULT_BUDGET, DEFAULT_GOAL, build_floor
 from ..config import KavachConfig
 from ..models import ScenarioResult, StoryStep
 from ..signing import KeyPair
@@ -73,21 +74,21 @@ def _outcome(result: ScenarioResult) -> tuple[str, str, str]:
 
 class KavachTUI(App[None]):
     TITLE = "Kavach"
-    SUB_TITLE = "buyer ↔ seller · guardrail kernel"
+    SUB_TITLE = "guardrail checkout · kernel decides"
     CSS = """
     Screen {
-        background: #0b0f14;
-        color: #e8eef4;
+        background: #1A1320;
+        color: #FFF8E7;
     }
     Header {
-        background: #0b0f14;
-        color: #9aa8b6;
+        background: #1A1320;
+        color: #F4E9C7;
         dock: top;
         height: 1;
     }
     Footer {
-        background: #0b0f14;
-        color: #9aa8b6;
+        background: #1A1320;
+        color: #A899B5;
     }
     #chrome {
         height: 7;
@@ -98,47 +99,47 @@ class KavachTUI(App[None]):
         height: 3;
         padding: 0 2;
         content-align: left middle;
-        background: #121820;
-        border-left: tall #3b82f6;
-        color: #c9d4df;
+        background: #3D2E4A;
+        border-left: tall #FFD93D;
+        color: #FFF8E7;
     }
     #outcome {
         height: 3;
         margin-top: 1;
         padding: 0 2;
         content-align: left middle;
-        background: #121820;
-        border-left: tall #3a4654;
-        color: #9aa8b6;
+        background: #3D2E4A;
+        border-left: tall #A899B5;
+        color: #A899B5;
     }
-    #outcome.outcome-idle { border-left: tall #3a4654; color: #9aa8b6; }
-    #outcome.outcome-ok { border-left: tall #3dd68c; color: #d7f5e5; }
-    #outcome.outcome-refuse { border-left: tall #f5a524; color: #fde7c3; }
-    #outcome.outcome-attack { border-left: tall #e5484d; color: #ffd5d7; }
+    #outcome.outcome-idle { border-left: tall #A899B5; color: #A899B5; }
+    #outcome.outcome-ok { border-left: tall #6BCF7F; color: #B4E5BD; }
+    #outcome.outcome-refuse { border-left: tall #FFD93D; color: #FFEC99; }
+    #outcome.outcome-attack { border-left: tall #FF6B6B; color: #FFB4B4; }
     #main {
         height: 1fr;
         padding: 1 1 0 1;
     }
     .pane {
-        background: #10161e;
-        border: round #243040;
+        background: #2A2033;
+        border: round #6B5878;
         margin-right: 1;
         padding: 0 0 1 0;
     }
-    #cast { width: 26%; }
-    #story { width: 46%; }
+    #cast { width: 30%; }
+    #story { width: 42%; }
     #kernel { width: 28%; margin-right: 0; }
     .pane-title {
         height: 1;
         margin: 0 0 1 0;
         padding: 0 2;
-        background: #15202b;
-        color: #7dd3fc;
+        background: #3D2E4A;
+        color: #FFD93D;
         text-style: bold;
     }
     RichLog {
         height: 1fr;
-        background: #10161e;
+        background: #2A2033;
         scrollbar-size: 1 1;
         padding: 0 1;
         overflow-x: hidden;
@@ -166,7 +167,7 @@ class KavachTUI(App[None]):
             yield Static("Ready — press [bold]R[/] to run.", id="outcome", classes="outcome-idle", markup=True)
         with Horizontal(id="main"):
             with Vertical(classes="pane", id="cast"):
-                yield Static(" CAST", classes="pane-title")
+                yield Static(" FLOOR", classes="pane-title")
                 yield RichLog(id="agent-log", markup=True, wrap=True, auto_scroll=True)
             with Vertical(classes="pane", id="story"):
                 yield Static(" STORY", classes="pane-title")
@@ -193,7 +194,7 @@ class KavachTUI(App[None]):
     def _refresh_config(self) -> None:
         seller = self._seller()
         attack = seller.attack_id or "clean"
-        rails = "[bold #3dd68c]ON[/]" if self.guardrails_on else "[bold #e5484d]OFF[/]"
+        rails = "[bold #6BCF7F]ON[/]" if self.guardrails_on else "[bold #FF6B6B]OFF[/]"
         self.query_one("#config", Static).update(
             f"[bold]{seller.seller_id}[/]  ·  {seller.label}  ·  [cyan]{attack}[/]"
             f"     Guardrails {rails}"
@@ -204,6 +205,39 @@ class KavachTUI(App[None]):
     def _kv(self, log: RichLog, key: str, value: str) -> None:
         log.write(f"  [dim]{key:<8}[/] {value}")
 
+    def _floor_roster(self, result: ScenarioResult | None = None) -> dict:
+        db = Database(":memory:")
+        buyer, sellers = seed_world(db, products_per_seller=1)
+        floor = build_floor(
+            config=self._config,
+            buyer=buyer,
+            sellers=sellers,
+            seller_id=self._seller().seller_id,
+            goal=result.goal_text if result else DEFAULT_GOAL,
+            budget=result.budget_ceiling_minor if result else DEFAULT_BUDGET,
+            guardrails=result.guardrails if result else self.guardrails_on,
+        )
+        db.close()
+        return floor
+
+    def _write_agent_card(self, log: RichLog, agent: dict) -> None:
+        color = {
+            "sky": "#4ECDC4",
+            "coral": "#FF6B6B",
+            "lemon": "#FFD93D",
+            "lilac": "#B197FC",
+            "peach": "#FFA07A",
+        }.get(agent["accent"], "#FFF8E7")
+        status = agent["status"]["label"]
+        log.write(f"[bold {color}]{agent['title']}[/]  [dim]{status}[/]")
+        log.write(f"  [dim]{agent['blurb']}[/]")
+        for key, value in agent["properties"]:
+            self._kv(log, str(key), str(value))
+        leash = agent["sections"]["autonomy"].get("leash")
+        if leash:
+            self._kv(log, "leash", leash)
+        log.write("")
+
     def _write_idle_panes(self) -> None:
         agents = self.query_one("#agent-log", RichLog)
         story = self.query_one("#negotiation-log", RichLog)
@@ -212,17 +246,9 @@ class KavachTUI(App[None]):
         story.clear()
         kernel.clear()
         seller = self._seller()
-
-        agents.write("[bold #7dd3fc]Buyer[/]")
-        self._kv(agents, "role", "shops within a signed budget")
-        agents.write("")
-        agents.write("[bold #f5a524]Seller[/]")
-        self._kv(agents, "id", seller.seller_id)
-        self._kv(agents, "mode", seller.label)
-        self._kv(agents, "class", seller.attack_id or "clean")
-        agents.write("")
-        agents.write("[bold #3dd68c]Kernel[/]")
-        self._kv(agents, "job", "only path that can move money")
+        floor = self._floor_roster()
+        for agent in floor["agents"]:
+            self._write_agent_card(agents, agent)
 
         story.write("[dim]No run yet.[/]")
         story.write("")
@@ -237,9 +263,11 @@ class KavachTUI(App[None]):
         kernel.write("[dim]Audit trail waits for a run.[/]")
         kernel.write("")
         if self.guardrails_on:
-            kernel.write("[#3dd68c]● Guardrails armed[/]")
+            kernel.write("[#6BCF7F]● Guardrails armed[/]")
         else:
-            kernel.write("[#e5484d]● Guardrails off — attacks can land[/]")
+            kernel.write("[#FF6B6B]● Guardrails off — attacks can land[/]")
+        kernel.write("")
+        kernel.write("[dim]Kernel is the only desk that can move money.[/]")
 
     def action_toggle_guardrails(self) -> None:
         if self._scenario_running:
@@ -310,23 +338,22 @@ class KavachTUI(App[None]):
     def _render_cast(self, result: ScenarioResult, llm_label: str) -> None:
         agents = self.query_one("#agent-log", RichLog)
         agents.clear()
-        seller = self._seller()
-        agents.write("[bold #7dd3fc]Buyer[/]")
-        self._kv(agents, "goal", result.goal_text or "—")
-        self._kv(agents, "budget", _money(result.budget_ceiling_minor))
-        self._kv(agents, "llm", "helped" if result.llm_used else "rules only")
-        agents.write("")
-        agents.write("[bold #f5a524]Seller[/]")
-        self._kv(agents, "id", seller.seller_id)
-        self._kv(agents, "mode", seller.label)
-        self._kv(agents, "class", result.attack_class or "clean")
-        agents.write("")
-        agents.write("[bold #3dd68c]Product[/]")
-        self._kv(agents, "item", result.product_title or "—")
-        agents.write("")
-        rails = "[#3dd68c]ON[/]" if result.guardrails else "[#e5484d]OFF[/]"
-        agents.write(f"  [dim]{'rails':<8}[/] {rails}")
-        agents.write(f"  [dim]{'backend':<8}[/] [dim]{llm_label}[/]")
+        floor = self._floor_roster(result)
+        for agent in floor["agents"]:
+            if agent["id"] == "buyer":
+                agent["properties"] = [
+                    ("goal", result.goal_text or "—"),
+                    ("budget", _money(result.budget_ceiling_minor)),
+                    ("llm", "helped" if result.llm_used else "rules only"),
+                    ("item", result.product_title or "—"),
+                ]
+            if agent["id"] == "llm":
+                agent["properties"] = [
+                    ("mode", "helped" if result.llm_used else "idle"),
+                    ("backend", llm_label),
+                    ("writes db", "no"),
+                ]
+            self._write_agent_card(agents, agent)
 
     def _append_story_step(self, step: StoryStep) -> None:
         story = self.query_one("#negotiation-log", RichLog)
@@ -345,29 +372,29 @@ class KavachTUI(App[None]):
         kernel = self.query_one("#guardrail-log", RichLog)
         kernel.clear()
         if result.refusal_rule:
-            kernel.write(f"[bold #e5484d]✕ Refused[/]  {result.refusal_rule}")
+            kernel.write(f"[bold #FF6B6B]✕ Refused[/]  {result.refusal_rule}")
         elif result.settled and result.attack_succeeded:
-            kernel.write("[bold #e5484d]✕ Attack landed[/]")
+            kernel.write("[bold #FF6B6B]✕ Attack landed[/]")
         elif result.settled:
-            kernel.write("[bold #3dd68c]✓ Checkout cleared[/]")
+            kernel.write("[bold #6BCF7F]✓ Checkout cleared[/]")
         else:
             kernel.write("[dim]— No checkout[/]")
         kernel.write("")
         kernel.write("[bold]Audit[/]")
         for event in events[-14:]:
             if event.event_type == "GUARDRAIL_REFUSAL":
-                color = "#e5484d"
+                color = "#FF6B6B"
             elif event.event_type == "FIREWALL_SCAN" and not result.guardrails:
-                color = "#5b6b7a"
+                color = "#A899B5"
             else:
-                color = "#3dd68c"
+                color = "#6BCF7F"
             label = AUDIT_PLAIN.get(event.event_type, event.event_type)
             payload = event.payload or {}
             detail = payload.get("rule_id") or payload.get("label") or ""
             suffix = f"  [dim]{detail}[/]" if detail else ""
             kernel.write(f"[{color}]{event.seq:02d}[/] {label}{suffix}")
         kernel.write("")
-        replay = "[#3dd68c]ok[/]" if result.audit_replay_ok else "[#e5484d]broken[/]"
+        replay = "[#6BCF7F]ok[/]" if result.audit_replay_ok else "[#FF6B6B]broken[/]"
         kernel.write(f"Replay {replay}   Spent [bold]{_money(result.spent_minor)}[/]")
 
     def _render_outcome(self, result: ScenarioResult, llm_label: str) -> None:

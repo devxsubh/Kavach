@@ -60,6 +60,21 @@ def create_app(
     def sellers():
         return {"sellers": app.state.gateway.list_sellers()}
 
+    @app.get("/v1/floor")
+    def floor(
+        seller_id: str = Query(default="seller_04"),
+        goal: str = Query(default="Find a wireless audio product"),
+        budget: int = Query(default=15000, gt=0),
+        guardrails: str | None = Query(default=None),
+    ):
+        rails = None if guardrails is None else guardrails != "off"
+        return app.state.gateway.list_floor(
+            seller_id=seller_id,
+            goal=goal,
+            budget=budget,
+            guardrails=rails,
+        )
+
     @app.post("/v1/scenarios/run")
     def run_scenario(body: ScenarioRunRequest):
         result = app.state.gateway.run_scenario(

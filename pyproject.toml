@@ -31,3 +31,6 @@ package = true
 
 [tool.setuptools.packages.find]
 include = ["kavach*"]
+
+[tool.setuptools.package-data]
+kavach = ["static/*"]

@@ -54,6 +54,16 @@ class NegotiationDecision(BaseModel):
     action: Literal["offer", "accept", "walk"]
     price_minor: int | None = Field(default=None, ge=1)
     rationale: str = Field(default="", max_length=500)
+    # Spoken line shown in the demo. Optional — rules-talk templates fill in when empty.
+    utterance: str = Field(default="", max_length=500)
+
+
+class SellerQuote(BaseModel):
+    """LLM (or template) seller counter: price plus spoken utterance."""
+
+    model_config = ConfigDict(extra="forbid")
+    price_minor: int = Field(ge=1)
+    utterance: str = Field(default="", max_length=500)
 
 
 class DiscoveryDecision(BaseModel):

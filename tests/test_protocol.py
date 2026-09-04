@@ -19,6 +19,21 @@ def test_signed_envelope_and_transcript_chain():
     assert bus.transcripts["c"].messages[1].prev_hash == digest(bus.transcripts["c"].messages[0].model_dump(mode="json"))
 
 
+def test_message_cap_raises_gr11():
+    identities = {name: Identity(name, KeyPair()) for name in ("buyer", "seller")}
+    codec = EnvelopeCodec(identities)
+    bus = MessageBus(codec, max_messages=2)
+    import asyncio
+
+    first = bus.make_envelope(conversation_id="c", sender_id="buyer", recipient_id="seller", msg_type="OFFER", payload=OfferPayload(product_id="p", price_minor=10))
+    asyncio.run(bus.send(first))
+    second = bus.make_envelope(conversation_id="c", sender_id="seller", recipient_id="buyer", msg_type="COUNTER", payload=OfferPayload(product_id="p", price_minor=12))
+    asyncio.run(bus.send(second))
+    third = bus.make_envelope(conversation_id="c", sender_id="buyer", recipient_id="seller", msg_type="OFFER", payload=OfferPayload(product_id="p", price_minor=11))
+    with pytest.raises(RuntimeError, match="GR-11"):
+        asyncio.run(bus.send(third))
+
+
 def test_tampered_envelope_is_rejected():
     identities = {name: Identity(name, KeyPair()) for name in ("buyer", "seller")}
     codec = EnvelopeCodec(identities)

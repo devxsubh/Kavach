@@ -45,17 +45,18 @@ def validate_negotiation_decision(
     previous_offer: int,
     burst_pct: float,
 ) -> NegotiationDecision:
+    utterance = (decision.utterance or "").strip()[:500]
     if decision.action == "walk":
-        return decision
+        return decision.model_copy(update={"utterance": utterance})
     price = decision.price_minor
     if price is None:
-        return decision
+        return decision.model_copy(update={"utterance": utterance})
     if price > budget_ceiling_minor:
         price = budget_ceiling_minor
     if price > reservation:
         price = reservation
     price = enforce_budget_burst(previous_offer, price, budget_ceiling_minor, burst_pct=burst_pct)
-    return decision.model_copy(update={"price_minor": max(1, price)})
+    return decision.model_copy(update={"price_minor": max(1, price), "utterance": utterance})
 
 
 def deterministic_intent_draft(goal_text: str) -> IntentDraft:

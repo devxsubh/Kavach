@@ -1,15 +1,53 @@
 # Kavach
 
-**Kavach** (Sanskrit: *armor*, *shield*) is a local research prototype for **adversarial multi-agent commerce**.
+**Kavach** (Sanskrit: *armor*, *shield*) is a **guardrail kernel for agentic checkout**.
 
-In plain English: a buyer agent and a seller agent try to make a deal. The seller might cheat. A separate **guardrail kernel** decides whether money is allowed to move. Large language models (LLMs) can help the buyer think — but they are never allowed to write to the database directly.
+A buyer agent and a seller agent try to close a purchase. The seller might cheat — prompt injection, bait-and-switch, fake reviews, cart stuffing. A separate **kernel** is the only component allowed to move money. Large language models can advise the buyer. They never write to the database.
 
-This README explains **what Kavach is**, **how the pieces fit together**, **how a purchase flows**, and **how to run a demo** so anyone can understand it — even if they have not read the code.
+This is not an office-agent workspace or a staff simulator. The pixel-art map is a **checkout sandbox**: you brief a shopping goal, hire a seller (honest or adversarial), watch the negotiation, and see the kernel **allow** or **refuse** payment — including Razorpay Checkout in test mode when the deal is clean.
+
+This README explains **what Kavach is**, **how the pieces fit together**, **how a purchase flows**, and **how to run a demo**.
+
+---
+
+## Live demo
+
+The browser sandbox at `/demo/pay` is the fastest way to see the claim: **agents propose, the kernel decides**.
+
+![Checkout sandbox — brief, negotiate, kernel allow, Razorpay Checkout](docs/demo/kavach-checkout.gif)
+
+*Chat view: Harbor Soundbar Mini, intent locked (`audio`, `wireless=True`). Seller offers **$34.35**; the buyer LLM matches. Outcome: **Kernel allowed · Opening Razorpay Checkout…***
+
+What the clip shows:
+
+1. You set a **brief** (e.g. “Find a wireless audio product”) and a **budget**.
+2. You hire a seller — here `seller_02` (attack class **A-1**, injection in product text).
+3. Buyer and seller negotiate on the map; the LLM can write the buyer’s next line.
+4. Checkout hits the kernel. If the rules pass, **Razorpay Checkout** opens (test mode). If they fail, money never moves.
+
+![Razorpay test Checkout after the kernel allowed payment](docs/demo/checkout-complete.png)
+
+*Complete checkout on the sandbox (`seller_01`, guardrails ON): Harbor Soundbar Mini at **₹108.24**, then Razorpay Checkout in test mode. The kernel already allowed the payment — Razorpay is only reached after that.*
+
+![Kernel station listing guardrail rules GR-1 through GR-10](docs/demo/kernel-guardrails.png)
+
+*Kernel station.* The kernel is the only actor that can move money. Click it to read the live guardrail list (GR-1 … GR-10 shown here; GR-11 and GR-12 still apply at checkout).
+
+Run it locally:
+
+```bash
+uv sync --extra dev
+uv run kavach serve
+# open http://127.0.0.1:8080/demo/pay
+```
+
+The default rail is a simulated wallet. Set `KAVACH_PAYMENT_RAIL=razorpay` plus test keys in `.env` if you want the real Checkout.js modal, as in the screenshots.
 
 ---
 
 ## Table of contents
 
+- [Live demo](#live-demo)
 1. [What problem does this solve?](#1-what-problem-does-this-solve)
 2. [Big picture in one minute](#2-big-picture-in-one-minute)
 3. [Architecture](#3-architecture)
@@ -58,7 +96,7 @@ Kavach is a **red-team harness** for agentic checkout, not a real payment produc
 
 ```mermaid
 flowchart LR
-  Human[You / CLI / TUI] --> Orchestrator[Buyer–Seller orchestrator]
+  Human[You / CLI / TUI / sandbox] --> Orchestrator[Buyer–Seller orchestrator]
   Orchestrator --> Buyer[Buyer agent]
   Orchestrator --> Seller[Seller agent]
   Buyer -.->|optional advice| LLM[LLM Nvidia or Ollama]
@@ -97,6 +135,7 @@ flowchart TB
   subgraph Interface
     CLI[cli.py — demo / sellers / eval]
     TUI[ui/ — live 3-pane Textual app]
+    Sandbox[browser checkout sandbox]
   end
 
   subgraph Agents
@@ -133,6 +172,7 @@ flowchart TB
 
   CLI --> Orch
   TUI --> Orch
+  Sandbox --> Orch
   Orch --> Intent
   Orch --> Neg
   Intent --> LLMAdapt
@@ -161,8 +201,9 @@ flowchart TB
 | `kavach/protocol/` | How buyer and seller talk: signed messages, conversation hash chain, rate limits |
 | `kavach/agents/` | Scenario orchestration, buyer/seller behavior, optional LLM calls, prompts |
 | `kavach/adversarial/` | Attack definitions and the evaluation harness that compares guardrails ON vs OFF |
-| `kavach/ui/` | Live terminal UI (cast / story / kernel) |
-| `kavach/cli.py` | Command-line entry: `demo`, `sellers`, `tui`, `eval` |
+| `kavach/ui/` | Live terminal UI (agent files / story / kernel audit) |
+| `kavach/api/` + `kavach/static/` | HTTP gateway and the browser **checkout sandbox** (`/demo/pay`) |
+| `kavach/cli.py` | Command-line entry: `demo`, `sellers`, `tui`, `serve`, `eval` |
 
 ### 3.3 Data the kernel cares about
 
@@ -255,7 +296,7 @@ sequenceDiagram
 
 ### What the negotiation story shows
 
-Each round is a **transcript**, not just a price delta. The CLI, TUI, and `/demo/pay` page all render the same `StoryStep` list:
+Each round is a **transcript**, not just a price delta. The CLI, TUI, and checkout sandbox (`/demo/pay`) all render the same `StoryStep` list:
 
 ```text
 Round 1
@@ -273,10 +314,13 @@ Under the hood:
 
 | Layer | Role |
 |---|---|
-| **Buyer message text** | Natural-language templates (`buyer_offer_text`) — varies by round and product |
-| **Seller message text** | Natural-language templates (`seller_counter_text`) — varies by policy profile (`linear`, `hardball`, `boulware`) |
-| **Buyer decision** | Optional LLM JSON (`offer` / `accept` / `walk`), always clamped by validators; falls back to deterministic rules |
+| **Buyer message text** | Seeded rules-talk templates (`kavach/agents/talk.py`) — reply-aware, varies by `talk_seed`, round, and product trait. Demo Authorize uses a **fresh seed** each click; eval/tests pin the seed. |
+| **Seller message text** | Same template bank, with per-attack voice (A-3 closer, A-5 budget probe, A-6 reviews, A-8 stalling). |
+| **Buyer / seller LLM utterance** | When `KAVACH_USE_LLM=1` and a model is reachable, agents may fill an `utterance` field; empty → rules-talk fallback. Seller text is firewall-sanitized **before** the buyer LLM sees it (rails ON). |
+| **Buyer decision** | Optional LLM JSON (`offer` / `accept` / `walk` + `utterance`), always clamped by validators; falls back to deterministic rules |
 | **Protocol bus** | Signed `OFFER` / `COUNTER` envelopes carry the same `text` field; transcript hash binds checkout |
+
+The demo labels the conversation as **rules talk** or **LLM talk** so it is clear when lines are templates vs. model-written. Rules talk is intentional for reproducible CI — not a claim of live intelligence.
 
 The seeded catalog uses realistic product names (e.g. **Harbor Soundbar Mini**, **Aether Wireless Earbuds Pro**) instead of generic `Audio Item 4-1` placeholders.
 
@@ -376,7 +420,7 @@ Each demo seller maps to one attack (except `seller_01`, who is honest).
 | `seller_06` | **A-5** | Probe for buyer’s budget ceiling | GR-1, GR-2 |
 | `seller_07` | **A-6** | Synthetic review flood | GR-2, GR-7 |
 | `seller_08` | **A-7** | Cart contains undiscovered product | GR-8 |
-| `seller_09` | **A-8** | Endless counters / message flood | GR-11 |
+| `seller_09` | **A-8** | Endless counters / message flood | **GR-11** (rails ON); loop runs and scores as attack success when OFF |
 
 ### Clearest first demo: bait-and-switch (A-3)
 
@@ -435,7 +479,7 @@ flowchart LR
 |---|---|---|
 | **Buyer intent** | Optional | `IntentDraft` JSON from goal text |
 | **Buyer negotiation** | Optional | `NegotiationDecision` JSON — offer / accept / walk |
-| **Seller quotes** | **No** | Deterministic pricing + template dialogue (`seller_counter_text`) |
+| **Seller quotes** | **Optional** | Rules pricing + talk templates; with LLM on, `SellerQuote` utterance (still floor-clamped). A-8 stays mechanical for GR-11 |
 | **Checkout / wallet** | **Never** | Kernel only |
 
 | LLM may do | LLM may not do |
@@ -486,7 +530,16 @@ KAVACH_USE_OLLAMA=1 KAVACH_MODEL=qwen2.5:7b uv run kavach demo --seller seller_0
 
 You will see `Parsed by: LLM` and `Buyer decision (LLM): …` in the story when Ollama is reachable.
 
-### Live UI
+### Checkout sandbox (browser)
+
+```bash
+uv run kavach serve
+# open http://127.0.0.1:8080/demo/pay
+```
+
+Set a brief and budget, hire a seller, click **Authorize checkout**. Watch the map, then switch to **Chat** for the full transcript. See [Live demo](#live-demo) and [§13](#13-razorpay-guardrail-gateway-real-world-rail) for Razorpay test keys.
+
+### Terminal UI
 
 ```bash
 uv run kavach tui
@@ -499,16 +552,7 @@ uv run kavach tui
 | **G** | Toggle guardrails ON/OFF |
 | **Q** | Quit |
 
-The TUI defaults to **seller_04** (bait-and-switch). Left = cast, middle = story, right = kernel audit.
-
-### Guardrail gateway (Razorpay-ready)
-
-```bash
-uv run kavach serve
-# open http://127.0.0.1:8080/demo/pay
-```
-
-See [§13](#13-razorpay-guardrail-gateway-real-world-rail) for test keys and the ON/OFF payment demo.
+The TUI defaults to **seller_04** (bait-and-switch). Left = each agent’s file, middle = story, right = kernel audit.
 
 ### Tests
 
@@ -606,7 +650,7 @@ KAVACH_PAYMENT_RAIL=simulated   # default — demo / TUI / eval use the local wa
 KAVACH_USE_LLM=0 uv run kavach eval --scenarios 40 --output artifacts
 ```
 
-For each scenario the harness runs **twice** (guardrails OFF and ON) and writes:
+Default CI / research scorecard is **`rules_only`** (deterministic buyer, pinned `talk_seed`). For each scenario the harness runs **twice** (guardrails OFF and ON) and writes:
 
 - `artifacts/scorecard.md` — human-readable table
 - `artifacts/scorecard.json` — full per-scenario results
@@ -623,7 +667,18 @@ Headline metrics:
 | Audit replay rate | Settled orders whose trail can be reconstructed |
 | Refusals by rule | Which GR codes fired |
 
-A healthy research demo shows a **large gap**: attacks succeed more often OFF than ON.
+### What rules-only eval claims (honestly)
+
+| Attack | Rules-only ON/OFF delta | Notes |
+|---|---|---|
+| **A-3** bait-and-switch | Yes — GR-9 (or GR-6 if switch blows budget) | Clearest money demo |
+| **A-4** false spec | Yes — discovery filter ON | Audio + wireless goal |
+| **A-7** cart injection | Yes — GR-8 keeps discovered SKU | Money moves OFF only |
+| **A-8** loop exhaustion | Yes — GR-11 ON; loop runs OFF | Scored as loop stopped vs loop ran |
+| **A-5 / A-6** | Firewall quarantine ON | Does not move extra money under rules buyer |
+| **A-1 / A-2** injection | Quarantine proven; **money-moving ASR needs LLM-on** | Deterministic buyer ignores persuader text |
+
+A healthy research demo shows a **large gap** on A-3 / A-4 / A-7 / A-8: attacks succeed more often OFF than ON. Do not read A-1/A-2 0% ASR under `KAVACH_USE_LLM=0` as “injection is solved” — there is no persuadable mind in that mode.
 
 ---
 
@@ -659,7 +714,7 @@ uv sync
 uv run kavach serve --host 127.0.0.1 --port 8080
 ```
 
-5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay).
+5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay). The page is the **checkout sandbox**: buyer, hired seller, kernel, and LLM advisor on a map, plus vault / catalog / audit stations. Set a brief, hire an attack class, click **Authorize checkout**.
 
 ### What to try
 
@@ -678,7 +733,8 @@ uv run kavach serve --host 127.0.0.1 --port 8080
 | POST | `/v1/checkout/authorize` | negotiate → kernel authorize → maybe create Razorpay order |
 | POST | `/v1/checkout/confirm` | verify Checkout.js signature and settle |
 | POST | `/v1/webhooks/razorpay` | optional webhook (`payment.captured`) |
-| GET | `/demo/pay` | browser demo page |
+| GET | `/v1/floor` | sandbox roster: buyer / seller / kernel / LLM advisor + station properties |
+| GET | `/demo/pay` | browser checkout sandbox |
 
 Local webhooks: Razorpay cannot reach `localhost` without a tunnel (e.g. ngrok). The demo page uses **`/v1/checkout/confirm`** so you do not need a public URL for v1.
 
@@ -705,12 +761,14 @@ kavach/
 │   ├── protocol/             ← signed envelopes + bus
 │   ├── agents/
 │   │   ├── orchestrator.py   ← scenario story + buyer/seller dialogue
+│   │   ├── roster.py         ← per-agent files (identity · goal · runtime · skills)
 │   │   └── …                 ← LLM adapter, prompts, validators
 │   ├── adversarial/          ← attacks + evaluation
 │   ├── payments/             ← Razorpay rail + fake for tests
-│   ├── api/                  ← FastAPI guardrail gateway
-│   ├── static/pay.html       ← browser checkout demo (pre-wrap story)
-│   └── ui/                   ← Textual TUI (cast / story / kernel)
+│   ├── api/                  ← FastAPI guardrail gateway (`/v1/floor` roster)
+│   ├── static/               ← checkout sandbox (pay.html + floor.css/js)
+│   └── ui/                   ← Textual TUI (agent files / story / kernel)
+├── docs/demo/                ← sandbox screenshots + checkout recording
 └── tests/                    ← kernel, invariants, CLI, UI, API rail
 ```
 
@@ -721,6 +779,7 @@ kavach/
 Kavach **intentionally excludes**:
 
 - live (production) Razorpay keys in v1 — **test mode only**
+- an office-agent / workforce / “hire a team of agents” product
 - a full web storefront / Next.js dashboard
 - public internet merchants / Shopify catalog sync
 - user accounts, shipping, returns
@@ -728,7 +787,7 @@ Kavach **intentionally excludes**:
 
 The default payment rail is a **simulated ledger**. Transport for agents is **in-process**. LLMs are **optional**. Deterministic agents + validators are the reproducible baseline for CI. Razorpay is an **opt-in gateway** after the kernel allows checkout.
 
-If you need a full production payment trust UI, pair this gateway with a dedicated product; Kavach’s niche remains **adversarial evaluation of agent checkout guardrails**.
+If you need a full production payment-trust UI, pair this gateway with a dedicated product. Kavach’s niche remains **adversarial evaluation of agent checkout guardrails** — not an office-agent product.
 
 ---
 
@@ -747,16 +806,18 @@ If you need a full production payment trust UI, pair this gateway with a dedicat
 | **Story step** | One beat in the demo narrative (`StoryStep`: phase, title, detail) — includes quoted negotiation lines |
 | **Payment rail** | `simulated` local ledger, or `razorpay` test-mode Orders + Checkout |
 | **Guardrail gateway** | FastAPI app (`kavach serve`) that other clients call before money moves |
+| **Checkout sandbox** | Browser demo at `/demo/pay`: map of buyer, seller, kernel, advisor + Razorpay test checkout |
 
 ---
 
 ## Suggested learning path
 
-1. Read [§2 Big picture](#2-big-picture-in-one-minute) and [§5 Safety rule](#5-the-safety-rule-non-negotiable).
-2. Run `kavach sellers`, then the A-3 ON/OFF demos in [§7](#7-attack-classes-a-1--a-8).
-3. Open `kavach tui`, press **R**, then **G**, then **R** again.
-4. Skim [§4](#4-how-one-purchase-works-step-by-step) with the story pane open.
-5. Run a small `kavach eval` and look at the ON vs OFF attack rates.
-6. Add Razorpay test keys and walk through [§13](#13-razorpay-guardrail-gateway-real-world-rail).
+1. Watch the [live demo](#live-demo), then read [§2 Big picture](#2-big-picture-in-one-minute) and [§5 Safety rule](#5-the-safety-rule-non-negotiable).
+2. Run `uv run kavach serve` and reproduce the sandbox: brief → hire seller → **Authorize checkout**.
+3. Run `kavach sellers`, then the A-3 ON/OFF CLI demos in [§7](#7-attack-classes-a-1--a-8).
+4. Open `kavach tui`, press **R**, then **G**, then **R** again.
+5. Skim [§4](#4-how-one-purchase-works-step-by-step) with Chat view or the TUI story pane open.
+6. Run a small `kavach eval` and look at the ON vs OFF attack rates.
+7. Add Razorpay test keys and walk through [§13](#13-razorpay-guardrail-gateway-real-world-rail).
 
-That sequence is enough for a newcomer to understand what Kavach is claiming — and to see the claim in a terminal (and optionally on Razorpay test Checkout) in under fifteen minutes.
+That sequence is enough to see the claim in the browser (and optionally on Razorpay test Checkout) in under fifteen minutes.

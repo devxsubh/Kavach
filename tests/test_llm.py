@@ -1,7 +1,9 @@
-from kavach.agents.orchestrator import BuyerNegotiator, IntentAgent
-from kavach.advanced_models import IntentDraft, NegotiationDecision
+from kavach.agents.orchestrator import BuyerNegotiator, IntentAgent, SellerNegotiator
+from kavach.advanced_models import IntentDraft, NegotiationDecision, SellerQuote
 from kavach.config import KavachConfig
-from kavach.models import IntentMandate
+from kavach.models import IntentMandate, Product
+from kavach.signing import KeyPair
+from kavach.world import Database, seed_world
 
 
 class FakeLLM:
@@ -15,7 +17,14 @@ class FakeLLM:
         self.calls.append((system, user, schema))
         if schema is IntentDraft:
             return IntentDraft(goal_text="Find audio", allowed_categories=["audio"])
-        return NegotiationDecision(action="offer", price_minor=999999, rationale="over ceiling")
+        if schema is SellerQuote:
+            return SellerQuote(price_minor=9000, utterance="I can do nine thousand cents on that unit.")
+        return NegotiationDecision(
+            action="offer",
+            price_minor=999999,
+            rationale="over ceiling",
+            utterance="I'll go a bit higher — still under my limit.",
+        )
 
 
 def test_intent_llm_output_is_typed():
@@ -25,7 +34,7 @@ def test_intent_llm_output_is_typed():
     assert mandate.allowed_categories == ["audio"]
 
 
-def test_negotiation_llm_output_is_clamped():
+def test_negotiation_llm_output_is_clamped_and_keeps_utterance():
     llm = FakeLLM()
     config = KavachConfig(
         guardrails=True,
@@ -47,3 +56,21 @@ def test_negotiation_llm_output_is_clamped():
         round_no=0,
     )
     assert decision.price_minor == 100
+    assert "limit" in decision.utterance
+
+
+def test_seller_llm_quote_uses_utterance():
+    llm = FakeLLM()
+    db = Database(":memory:")
+    buyer, sellers = seed_world(db, seed=7, products_per_seller=2)
+    from kavach.kernel import GuardrailKernel, MandateAuthority
+
+    keys = {buyer.id: KeyPair(), "kernel": KeyPair(), **{s.id: KeyPair() for s in sellers}}
+    kernel = GuardrailKernel(db, MandateAuthority(keys), guardrails=True)
+    seller = next(s for s in sellers if s.id == "seller_01")
+    product = next(p for p in db.search_products() if p.seller_id == seller.id)
+    neg = SellerNegotiator(db, kernel, seller.id, llm=llm, talk_seed=1)
+    reply = neg.reply(product, buyer_offer=5000, round_no=0)
+    assert neg.used_llm is True
+    assert "nine thousand" in reply.text.lower() or reply.price_minor == 9000
+    db.close()

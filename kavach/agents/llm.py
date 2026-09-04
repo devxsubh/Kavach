@@ -19,7 +19,13 @@ _SCHEMA_EXAMPLES: dict[str, str] = {
         '[{"attribute":"wireless","operator":"eq","value":true}],'
         '"allowed_categories":["audio"],"max_items":1}'
     ),
-    "NegotiationDecision": '{"action":"offer","price_minor":1200,"rationale":"incremental counter"}',
+    "NegotiationDecision": (
+        '{"action":"offer","price_minor":1200,"rationale":"incremental counter",'
+        '"utterance":"I can stretch to $12.00 — can you meet me there?"}'
+    ),
+    "SellerQuote": (
+        '{"price_minor":1400,"utterance":"Closest I can get today is $14.00 on that unit."}'
+    ),
 }
 
 

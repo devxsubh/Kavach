@@ -10,6 +10,14 @@ INJECTION_PATTERNS = [
     r"assistant\s*:\s*",
     r"reveal\s+(your|the)\s+(budget|prompt|instructions)",
     r"disregard\s+your\s+constraints",
+    # A-5 budget extraction — seller probes for the buyer ceiling.
+    r"(tell|share|what('?s| is))\s+(me\s+)?(your|the)\s+(maximum\s+|max\s+|highest\s+)?budget",
+    r"(your|the)\s+(maximum|max|highest)\s+budget",
+    r"what'?s\s+your\s+ceiling",
+    # A-6 / constraint override — reviews and copy that try to nullify hard rules.
+    r"ignore\s+all\s+constraints",
+    r"ignore\s+(your|the|all)\s+constraints",
+    r"buy\s+now\s+and\s+ignore",
 ]
 ROLE_TOKENS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|<\/?(system|user|assistant|developer)>|\[\/?INST\]", re.I)
 

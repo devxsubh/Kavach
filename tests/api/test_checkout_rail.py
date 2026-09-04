@@ -132,5 +132,69 @@ def test_demo_pay_page_renders():
     client = TestClient(app)
     page = client.get("/demo/pay")
     assert page.status_code == 200
-    assert "Guardrail Gateway" in page.text
+    assert "Guardrail checkout" in page.text
+    assert "kernel decides if money moves" in page.text
     assert "Authorize checkout" in page.text
+    assert "Command Center" in page.text
+    assert "viewFloor" in page.text
+    assert "viewChat" in page.text
+    assert 'data-view="floor"' in page.text
+    assert "talkPane" in page.text
+    assert "data-inspect=\"vault\"" in page.text
+    assert "data-inspect=\"catalog\"" in page.text
+    assert 'id="inspect"' in page.text
+    css = client.get("/static/floor.css")
+    js = client.get("/static/floor.js")
+    assert css.status_code == 200
+    assert js.status_code == 200
+
+
+def test_floor_roster_has_per_agent_properties():
+    fake = FakeRazorpayRail()
+    cfg = _config()
+    state = build_gateway_state(cfg, rail=fake)
+    app = create_app(cfg, gateway=CheckoutGateway(state))
+    client = TestClient(app)
+    floor = client.get("/v1/floor", params={"seller_id": "seller_04", "guardrails": "on"})
+    assert floor.status_code == 200
+    body = floor.json()
+    ids = [agent["id"] for agent in body["agents"]]
+    assert ids == ["buyer", "seller", "kernel", "llm"]
+    seller = next(agent for agent in body["agents"] if agent["id"] == "seller")
+    assert seller["sections"]["goal"]["current"] == "Bait and switch"
+    assert seller["hire_id"] == "seller_04"
+    kernel = next(agent for agent in body["agents"] if agent["id"] == "kernel")
+    assert kernel["can_move_money"] is True
+    assert kernel["sections"]["runtime"]["writes_db"].startswith("yes")
+    buyer = next(agent for agent in body["agents"] if agent["id"] == "buyer")
+    assert buyer["can_move_money"] is False
+    assert set(buyer["sections"]) == {"identity", "goal", "runtime", "skills", "autonomy"}
+    assert body["hired_seller_id"] == "seller_04"
+    world = body["world"]
+    assert "catalog" in world["stations"]
+    assert "vault" in world["stations"]
+    assert "mailbox" in world["stations"]
+    assert "board" in world["stations"]
+    assert len(world["stations"]["catalog"]["items"]) >= 1
+    assert world["stations"]["vault"]["wallet_minor"] > 0
+    assert world["stations"]["kernel"]["rules"]
+
+
+def test_authorize_fills_mailbox_and_audit_board():
+    fake = FakeRazorpayRail()
+    cfg = _config()
+    state = build_gateway_state(cfg, rail=fake)
+    gateway = CheckoutGateway(state)
+    app = create_app(cfg, gateway=gateway)
+    client = TestClient(app)
+    refused = client.post(
+        "/v1/checkout/authorize",
+        json={"seller_id": "seller_04", "guardrails": True, "budget": 15000},
+    )
+    assert refused.status_code == 200
+    assert refused.json()["allowed"] is False
+    floor = client.get("/v1/floor", params={"seller_id": "seller_04", "guardrails": "on"})
+    world = floor.json()["world"]
+    assert world["stations"]["mailbox"]["messages"]
+    assert world["stations"]["board"]["events"]
+    assert world["last_run"]["refusal_rule"] == "GR-9"
