@@ -9,11 +9,11 @@ from dotenv import load_dotenv
 
 from .exceptions import ConfigError
 
-LlmBackend = Literal["nvidia", "ollama"]
+LlmBackend = Literal["anthropic", "ollama"]
 PaymentRail = Literal["simulated", "razorpay"]
-NVIDIA_DEFAULT_MODEL = "deepseek-ai/deepseek-v4-flash-0731"
-NVIDIA_DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
-OLLAMA_DEFAULT_MODEL = "qwen3:8b"
+ANTHROPIC_DEFAULT_MODEL = "claude-haiku-4-5"
+ANTHROPIC_DEFAULT_BASE_URL = "https://api.anthropic.com"
+OLLAMA_DEFAULT_MODEL = "llama3.2"
 OLLAMA_DEFAULT_HOST = "http://127.0.0.1:11434"
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _ENV_LOADED = False
@@ -69,16 +69,16 @@ class KavachConfig:
         # without having to unset the backend selection too.
         use_llm_raw = _env("KAVACH_USE_LLM")
         use_llm = _truthy(use_llm_raw) if use_llm_raw is not None else use_ollama
-        backend_raw = (_env("KAVACH_LLM_BACKEND", "ollama" if use_ollama else "nvidia") or "nvidia").lower()
-        if backend_raw not in {"nvidia", "ollama"}:
-            raise ConfigError(f"KAVACH_LLM_BACKEND must be 'nvidia' or 'ollama', got {backend_raw!r}")
+        backend_raw = (_env("KAVACH_LLM_BACKEND", "ollama" if use_ollama else "anthropic") or "anthropic").lower()
+        if backend_raw not in {"anthropic", "ollama"}:
+            raise ConfigError(f"KAVACH_LLM_BACKEND must be 'anthropic' or 'ollama', got {backend_raw!r}")
         backend: LlmBackend = backend_raw  # type: ignore[assignment]
 
-        api_key = os.getenv("NVIDIA_API_KEY") or _env("KAVACH_LLM_API_KEY")
+        api_key = os.getenv("ANTHROPIC_API_KEY") or _env("KAVACH_LLM_API_KEY")
         ollama_host = os.getenv("OLLAMA_HOST", OLLAMA_DEFAULT_HOST).rstrip("/")
-        if backend == "nvidia":
-            llm_model = _env("KAVACH_MODEL", NVIDIA_DEFAULT_MODEL) or NVIDIA_DEFAULT_MODEL
-            llm_base_url = (_env("KAVACH_LLM_BASE_URL", NVIDIA_DEFAULT_BASE_URL) or NVIDIA_DEFAULT_BASE_URL).rstrip("/")
+        if backend == "anthropic":
+            llm_model = _env("KAVACH_MODEL", ANTHROPIC_DEFAULT_MODEL) or ANTHROPIC_DEFAULT_MODEL
+            llm_base_url = (_env("KAVACH_LLM_BASE_URL", ANTHROPIC_DEFAULT_BASE_URL) or ANTHROPIC_DEFAULT_BASE_URL).rstrip("/")
         else:
             llm_model = _env("KAVACH_MODEL", OLLAMA_DEFAULT_MODEL) or OLLAMA_DEFAULT_MODEL
             llm_base_url = ollama_host
@@ -110,12 +110,12 @@ class KavachConfig:
             if self.strict_config:
                 if _env("KAVACH_MODEL"):
                     raise ConfigError("KAVACH_MODEL is set but KAVACH_USE_LLM is disabled.")
-                if os.getenv("NVIDIA_API_KEY") or _env("KAVACH_LLM_API_KEY"):
-                    raise ConfigError("NVIDIA_API_KEY is set but KAVACH_USE_LLM is disabled.")
+                if os.getenv("ANTHROPIC_API_KEY") or _env("KAVACH_LLM_API_KEY"):
+                    raise ConfigError("ANTHROPIC_API_KEY is set but KAVACH_USE_LLM is disabled.")
             return warnings
-        if self.llm_backend == "nvidia" and not self.llm_api_key:
+        if self.llm_backend == "anthropic" and not self.llm_api_key:
             message = (
-                "KAVACH_USE_LLM is enabled with the Nvidia backend but NVIDIA_API_KEY is not set. "
+                "KAVACH_USE_LLM is enabled with the Anthropic backend but ANTHROPIC_API_KEY is not set. "
                 "Deterministic agents and validators will be used instead."
             )
             if self.strict_config:

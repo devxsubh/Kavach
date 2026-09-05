@@ -99,7 +99,7 @@ flowchart LR
   Human[You / CLI / TUI / sandbox] --> Orchestrator[Buyer–Seller orchestrator]
   Orchestrator --> Buyer[Buyer agent]
   Orchestrator --> Seller[Seller agent]
-  Buyer -.->|optional advice| LLM[LLM Nvidia or Ollama]
+  Buyer -.->|optional advice| LLM[LLM Claude Haiku or Ollama]
   Buyer --> Kernel[Guardrail kernel]
   Seller --> Kernel
   Kernel --> World[(SQLite world)]
@@ -142,7 +142,7 @@ flowchart TB
     Orch[orchestrator — full scenario story]
     Intent[Intent parsing]
     Neg[Negotiation]
-    LLMAdapt[LLM adapter — Nvidia / Ollama]
+    LLMAdapt[LLM adapter — Claude Haiku / Ollama]
     Val[validators — clamp LLM output]
   end
 
@@ -436,7 +436,7 @@ What you should see (exact prices vary by seed; structure is stable):
 | **ON** | Negotiate ~$80–85 → checkout asks ~$130–135 (+$50 switch) → **REFUSED · GR-9** · spent $0 |
 | **OFF** | Same switch → **ATTACK SUCCEEDED** · inflated charge goes through |
 
-Example with guardrails **ON** and Ollama (`seller_04` / A-3):
+Example with guardrails **ON** and Claude Haiku (`seller_04` / A-3):
 
 ```bash
 uv run kavach demo --seller seller_04 --guardrails on
@@ -491,8 +491,8 @@ flowchart LR
 
 Backends:
 
-- **Nvidia DeepSeek** (default when `KAVACH_USE_LLM=1` and not using Ollama)
-- **Ollama** (local; set `KAVACH_USE_OLLAMA=1` or `KAVACH_LLM_BACKEND=ollama`)
+- **Claude Haiku** (default cloud model when `KAVACH_USE_LLM=1`)
+- **Llama via Ollama** (local; set `KAVACH_USE_OLLAMA=1` or `KAVACH_LLM_BACKEND=ollama`)
 
 If the LLM fails, Kavach prints a warning and continues with deterministic rules — including templated buyer/seller dialogue.
 
@@ -521,14 +521,20 @@ KAVACH_USE_LLM=0 uv run kavach demo --seller seller_04 --guardrails off
 
 Negotiation still shows multi-line buyer/seller quotes — only the **decision** falls back to rules.
 
-### Run with a local LLM (Ollama)
+### Run with Claude Haiku (cloud)
 
 ```bash
-# pull a model once, e.g. qwen2.5:7b or the default qwen3:8b
-KAVACH_USE_OLLAMA=1 KAVACH_MODEL=qwen2.5:7b uv run kavach demo --seller seller_04 --guardrails on
+ANTHROPIC_API_KEY=sk-ant-... KAVACH_USE_LLM=1 uv run kavach demo --seller seller_04 --guardrails on
 ```
 
-You will see `Parsed by: LLM` and `Buyer decision (LLM): …` in the story when Ollama is reachable.
+### Run with a local Llama (Ollama)
+
+```bash
+# pull a model once, e.g. llama3.2
+KAVACH_USE_OLLAMA=1 KAVACH_MODEL=llama3.2 uv run kavach demo --seller seller_04 --guardrails on
+```
+
+You will see `Parsed by: LLM` and `Buyer decision (LLM): …` in the story when the chosen backend is reachable.
 
 ### Checkout sandbox (browser)
 
@@ -606,27 +612,28 @@ GUARDRAILS=off   # unguarded baseline for comparison
 
 CLI `--guardrails on|off` overrides the env var for one run.
 
-### LLM — Nvidia (cloud)
+### LLM — Claude Haiku (cloud)
 
 ```bash
-NVIDIA_API_KEY=nvapi-...
+ANTHROPIC_API_KEY=sk-ant-...
 KAVACH_USE_LLM=1
-KAVACH_MODEL=deepseek-ai/deepseek-v4-flash-0731
-KAVACH_LLM_BASE_URL=https://integrate.api.nvidia.com/v1
+KAVACH_LLM_BACKEND=anthropic
+KAVACH_MODEL=claude-haiku-4-5
 ```
 
-### LLM — Ollama (local)
+### LLM — Llama via Ollama (local)
 
 ```bash
 KAVACH_USE_OLLAMA=1
-KAVACH_MODEL=qwen2.5:7b          # or qwen3:8b (code default if unset)
+KAVACH_LLM_BACKEND=ollama
+KAVACH_MODEL=llama3.2
 OLLAMA_HOST=http://127.0.0.1:11434
 ```
 
 Notes:
 
 - An explicit `KAVACH_USE_LLM=0` turns the LLM **off** even if `KAVACH_USE_OLLAMA=1` is set.
-- `KAVACH_LLM_BACKEND=ollama|nvidia` selects the client when both could apply.
+- `KAVACH_LLM_BACKEND=anthropic|ollama` selects the client when both could apply.
 - `KAVACH_BUDGET_BURST_PCT` (default `0.15`) limits how much an offer may jump in one round.
 - `KAVACH_STRICT_CONFIG=1` turns LLM misconfiguration into hard errors instead of warnings.
 

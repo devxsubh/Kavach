@@ -39,9 +39,9 @@ def test_negotiation_llm_output_is_clamped_and_keeps_utterance():
     config = KavachConfig(
         guardrails=True,
         use_llm=False,
-        llm_backend="nvidia",
-        llm_model="deepseek-ai/deepseek-v4-flash-0731",
-        llm_base_url="https://integrate.api.nvidia.com/v1",
+        llm_backend="anthropic",
+        llm_model="claude-haiku-4-5",
+        llm_base_url="https://api.anthropic.com",
         llm_api_key=None,
         ollama_host="http://127.0.0.1:11434",
         budget_burst_pct=0.15,

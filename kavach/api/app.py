@@ -159,4 +159,10 @@ def run_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     config = KavachConfig.from_env()
     for warning in config.validate_payment_rail():
         print(f"warning: {warning}")
+    if config.use_llm:
+        from ..agents.llm import LLMAdapter
+
+        adapter = LLMAdapter(config)
+        for warning in config.validate_llm(adapter.available()):
+            print(f"warning: {warning}")
     uvicorn.run(create_app(config), host=host, port=port, log_level="info")

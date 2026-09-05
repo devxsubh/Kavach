@@ -1,8 +1,6 @@
-import os
-
 import pytest
 
-from kavach.config import KavachConfig, NVIDIA_DEFAULT_MODEL
+from kavach.config import ANTHROPIC_DEFAULT_MODEL, OLLAMA_DEFAULT_MODEL, KavachConfig
 from kavach.exceptions import ConfigError
 from kavach.validators import enforce_budget_burst, validate_intent_draft, validate_negotiation_decision
 from kavach.advanced_models import IntentDraft, NegotiationDecision
@@ -30,17 +28,20 @@ def test_intent_draft_validator_normalizes_constraints():
     assert validated.hard_constraints[0]["attribute"] == "wireless"
 
 
-def test_strict_config_rejects_nvidia_without_api_key(monkeypatch):
+def test_strict_config_rejects_anthropic_without_api_key(monkeypatch):
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
     monkeypatch.setenv("KAVACH_USE_LLM", "1")
+    monkeypatch.setenv("KAVACH_LLM_BACKEND", "anthropic")
     monkeypatch.setenv("KAVACH_STRICT_CONFIG", "1")
-    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("KAVACH_LLM_API_KEY", raising=False)
     config = KavachConfig.from_env()
-    with pytest.raises(ConfigError, match="NVIDIA_API_KEY"):
+    with pytest.raises(ConfigError, match="ANTHROPIC_API_KEY"):
         config.validate_llm(available=False)
 
 
 def test_strict_config_rejects_ollama_without_server(monkeypatch):
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
     monkeypatch.delenv("KAVACH_USE_LLM", raising=False)
     monkeypatch.setenv("KAVACH_USE_OLLAMA", "1")
     monkeypatch.setenv("KAVACH_STRICT_CONFIG", "1")
@@ -51,10 +52,41 @@ def test_strict_config_rejects_ollama_without_server(monkeypatch):
 
 
 def test_strict_config_rejects_unused_model_env(monkeypatch):
-    monkeypatch.setenv("KAVACH_MODEL", NVIDIA_DEFAULT_MODEL)
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
+    monkeypatch.setenv("KAVACH_MODEL", ANTHROPIC_DEFAULT_MODEL)
     monkeypatch.setenv("KAVACH_STRICT_CONFIG", "1")
     monkeypatch.delenv("KAVACH_USE_LLM", raising=False)
     monkeypatch.delenv("KAVACH_USE_OLLAMA", raising=False)
     config = KavachConfig.from_env()
     with pytest.raises(ConfigError, match="KAVACH_MODEL"):
         config.validate_llm(available=False)
+
+
+def test_from_env_defaults_to_anthropic_haiku(monkeypatch):
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
+    monkeypatch.setenv("KAVACH_USE_LLM", "1")
+    monkeypatch.delenv("KAVACH_USE_OLLAMA", raising=False)
+    monkeypatch.delenv("KAVACH_LLM_BACKEND", raising=False)
+    monkeypatch.delenv("KAVACH_MODEL", raising=False)
+    config = KavachConfig.from_env()
+    assert config.llm_backend == "anthropic"
+    assert config.llm_model == ANTHROPIC_DEFAULT_MODEL
+
+
+def test_from_env_ollama_keeps_llama(monkeypatch):
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
+    monkeypatch.setenv("KAVACH_USE_OLLAMA", "1")
+    monkeypatch.delenv("KAVACH_USE_LLM", raising=False)
+    monkeypatch.delenv("KAVACH_LLM_BACKEND", raising=False)
+    monkeypatch.delenv("KAVACH_MODEL", raising=False)
+    config = KavachConfig.from_env()
+    assert config.use_llm is True
+    assert config.llm_backend == "ollama"
+    assert config.llm_model == OLLAMA_DEFAULT_MODEL
+
+
+def test_from_env_rejects_nvidia_backend(monkeypatch):
+    monkeypatch.setenv("KAVACH_SKIP_DOTENV", "1")
+    monkeypatch.setenv("KAVACH_LLM_BACKEND", "nvidia")
+    with pytest.raises(ConfigError, match="anthropic"):
+        KavachConfig.from_env()

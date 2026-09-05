@@ -71,8 +71,20 @@ def _schema_prompt(system: str, schema: type[T]) -> str:
     )
 
 
+def _anthropic_text(message: object) -> str:
+    parts: list[str] = []
+    for block in getattr(message, "content", None) or []:
+        block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
+        if block_type != "text":
+            continue
+        text = block.get("text") if isinstance(block, dict) else getattr(block, "text", None)
+        if text:
+            parts.append(text)
+    return "".join(parts)
+
+
 class LLMAdapter:
-    """Optional LLM adapter (Nvidia DeepSeek by default, Ollama as fallback). Kernel remains authoritative."""
+    """Optional LLM adapter (Claude Haiku by default, local Llama via Ollama). Kernel remains authoritative."""
 
     def __init__(self, config: KavachConfig):
         self.config = config
@@ -89,36 +101,37 @@ class LLMAdapter:
     def available(self) -> bool:
         if not self.config.use_llm:
             return False
-        if self.config.llm_backend == "nvidia":
+        if self.config.llm_backend == "anthropic":
             return bool(self.config.llm_api_key)
         return self._ollama_reachable()
 
     def generate_json(self, system: str, user: str, schema: type[T]) -> T:
-        if self.config.llm_backend == "nvidia":
-            return self._generate_nvidia(system, user, schema)
+        if self.config.llm_backend == "anthropic":
+            return self._generate_anthropic(system, user, schema)
         return self._generate_ollama(system, user, schema)
 
-    def _client_for_nvidia(self):
+    def _client_for_anthropic(self):
         if self._client is None:
-            from openai import OpenAI
+            from anthropic import Anthropic
 
-            self._client = OpenAI(base_url=self.config.llm_base_url, api_key=self.config.llm_api_key)
+            self._client = Anthropic(api_key=self.config.llm_api_key, base_url=self.config.llm_base_url)
         return self._client
 
-    def _generate_nvidia(self, system: str, user: str, schema: type[T]) -> T:
-        client = self._client_for_nvidia()
-        completion = client.chat.completions.create(
-            model=self.config.llm_model,
-            messages=[
-                {"role": "system", "content": _schema_prompt(system, schema)},
-                {"role": "user", "content": user},
-            ],
-            temperature=0.2,
-            top_p=0.95,
-            max_tokens=2048,
-            response_format={"type": "json_object"},
-        )
-        content = completion.choices[0].message.content or ""
+    def _generate_anthropic(self, system: str, user: str, schema: type[T]) -> T:
+        client = self._client_for_anthropic()
+        try:
+            message = client.messages.create(
+                model=self.config.llm_model,
+                max_tokens=2048,
+                temperature=0.2,
+                system=_schema_prompt(system, schema),
+                messages=[{"role": "user", "content": user}],
+            )
+        except Exception as exc:
+            raise LLMResponseError(f"Anthropic request failed: {exc}") from exc
+        content = _anthropic_text(message)
+        if not content:
+            raise LLMResponseError("Anthropic returned an empty response")
         return _parse_schema_response(content, schema)
 
     def _generate_ollama(self, system: str, user: str, schema: type[T]) -> T:
