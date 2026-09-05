@@ -25,13 +25,30 @@ What the clip shows:
 3. Buyer and seller negotiate on the map; the LLM can write the buyer’s next line.
 4. Checkout hits the kernel. If the rules pass, **Razorpay Checkout** opens (test mode). If they fail, money never moves.
 
+### The map
+
+The pixel-art floor is a **checkout diagram**, not a workplace sim. Four actors, four rooms:
+
+| Place | What you see |
+|---|---|
+| **Kernel office** (top left) | GOD. Stays at the desk unless a rule fires — then it steps to the shop door. Click the office for GR-1…GR-12. |
+| **Advisor office** (top middle) | Optional LLM. Click for backend, wallet remaining, review counts. |
+| **Buyer home** (bottom left) | Buyer starts here and **walks out** to shop. Two floor boxes: **Vault** (their money) and **Audit** (past buying experiences). |
+| **Aisle** | Path from home to the shop. |
+| **Shop** (full right wall) | One tall store: **counter + till**, **catalog shelf**, **review wall**, open **floor**. The hired seller idles behind the counter and **comes out** when the buyer enters. |
+
+Two modes on the same page:
+
+- **Attack floor** — hire one seller (`seller_01`–`seller_09`, honest or A-1…A-8).
+- **Marketplace** — five honest stalls (`market_01`–`market_05`). The buyer walks out, the shop swaps, the buyer walks in, the owner comes out. GOD settles **only the cheapest closed handshake**.
+
 ![Razorpay test Checkout after the kernel allowed payment](docs/demo/checkout-complete.png)
 
 *Complete checkout on the sandbox (`seller_01`, guardrails ON): Harbor Soundbar Mini at **₹108.24**, then Razorpay Checkout in test mode. The kernel already allowed the payment — Razorpay is only reached after that.*
 
 ![Kernel station listing guardrail rules GR-1 through GR-10](docs/demo/kernel-guardrails.png)
 
-*Kernel station.* The kernel is the only actor that can move money. Click it to read the live guardrail list (GR-1 … GR-10 shown here; GR-11 and GR-12 still apply at checkout).
+*Kernel office.* The kernel is the only actor that can move money. Click it to read the live guardrail list (GR-1 … GR-10 shown here; GR-11 and GR-12 still apply at checkout).
 
 Run it locally:
 
@@ -48,6 +65,7 @@ The default rail is a simulated wallet. Set `KAVACH_PAYMENT_RAIL=razorpay` plus 
 ## Table of contents
 
 - [Live demo](#live-demo)
+  - [The map](#the-map)
 1. [What problem does this solve?](#1-what-problem-does-this-solve)
 2. [Big picture in one minute](#2-big-picture-in-one-minute)
 3. [Architecture](#3-architecture)
@@ -546,9 +564,9 @@ uv run kavach serve
 # open http://127.0.0.1:8080/demo/pay
 ```
 
-Set a brief and budget, hire a seller, click **Authorize checkout**. Watch the map, then switch to **Chat** for the full transcript. See [Live demo](#live-demo) and [§13](#13-razorpay-guardrail-gateway-real-world-rail) for Razorpay test keys.
+Set a brief and budget, hire a seller, click **Authorize checkout**. On the map: the buyer leaves home, checks in with the advisor, the owner comes out from the shop counter, they browse the shelf and review wall, then they talk on the shop floor. Switch to **Chat** for the full transcript. See [The map](#the-map) and [§13](#13-razorpay-guardrail-gateway-real-world-rail) for Razorpay test keys.
 
-Toggle **Marketplace** on the same page for a separate sim: one buyer walks five honest stalls that stock the same product families at different list prices, haggles with each, then GOD (the kernel) settles **only the cheapest closed handshake**. Attack-floor sellers (`seller_01`–`seller_09`) stay on the Attack floor tab.
+Toggle **Marketplace** on the same page: five honest stalls stock the same product families at different list prices. The shop itself swaps in place (buyer out → new stall → buyer in → owner comes out). GOD still settles **only the cheapest closed handshake**. Attack-floor sellers (`seller_01`–`seller_09`) stay on the Attack floor tab.
 
 ### Terminal UI
 
@@ -750,7 +768,7 @@ uv sync
 uv run kavach serve --host 127.0.0.1 --port 8080
 ```
 
-5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay). The page is the **checkout sandbox**: buyer, hired seller, kernel, and LLM advisor on a map, plus vault / catalog / audit stations. Set a brief, hire an attack class, click **Authorize checkout**. Switch to **Marketplace** and click **Shop the market** to comparison-shop five honest stalls; the kernel still settles only the winner.
+5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay). The page is the **checkout sandbox**: kernel office, advisor office, buyer home (vault + audit on the floor), aisle, and one tall shop (see [The map](#the-map)). Set a brief, hire an attack class, click **Authorize checkout**. Switch to **Marketplace** and click **Shop the market** to comparison-shop five honest stalls; the kernel still settles only the winner.
 
 ### What to try
 
@@ -800,6 +818,7 @@ kavach/
 │   ├── protocol/             ← signed envelopes + bus
 │   ├── agents/
 │   │   ├── orchestrator.py   ← scenario story + buyer/seller dialogue
+│   │   ├── marketplace.py    ← five-stall comparison shop
 │   │   ├── memory.py         ← working memory for one negotiation
 │   │   ├── conversation_eval.py ← spoken-line checks (budget leak, injection)
 │   │   ├── roster.py         ← per-agent files (identity · goal · runtime · skills)
@@ -847,14 +866,14 @@ If you need a full production payment-trust UI, pair this gateway with a dedicat
 | **Story step** | One beat in the demo narrative (`StoryStep`: phase, title, detail) — includes quoted negotiation lines |
 | **Payment rail** | `simulated` local ledger, or `razorpay` test-mode Orders + Checkout |
 | **Guardrail gateway** | FastAPI app (`kavach serve`) that other clients call before money moves |
-| **Checkout sandbox** | Browser demo at `/demo/pay`: map of buyer, seller, kernel, advisor + Razorpay test checkout |
+| **Checkout sandbox** | Browser demo at `/demo/pay`: kernel office, advisor office, buyer home (vault + audit), aisle, tall shop + Razorpay test checkout |
 
 ---
 
 ## Suggested learning path
 
 1. Watch the [live demo](#live-demo), then read [§2 Big picture](#2-big-picture-in-one-minute) and [§5 Safety rule](#5-the-safety-rule-non-negotiable).
-2. Run `uv run kavach serve` and reproduce the sandbox: brief → hire seller → **Authorize checkout**.
+2. Run `uv run kavach serve` and reproduce the sandbox: brief → hire seller → buyer enters the shop → **Authorize checkout**.
 3. Run `kavach sellers`, then the A-3 ON/OFF CLI demos in [§7](#7-attack-classes-a-1--a-8).
 4. Open `kavach tui`, press **R**, then **G**, then **R** again.
 5. Skim [§4](#4-how-one-purchase-works-step-by-step) with Chat view or the TUI story pane open.

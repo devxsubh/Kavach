@@ -177,7 +177,13 @@ def test_floor_roster_has_per_agent_properties():
     assert "vault" in world["stations"]
     assert "mailbox" in world["stations"]
     assert "board" in world["stations"]
+    assert "home" in world["stations"]
+    assert "reviews" in world["stations"]
+    assert world["stations"]["advisor"]["floor_brief"]
     assert len(world["stations"]["catalog"]["items"]) >= 1
+    assert "review_snippets" in world["stations"]["catalog"]["items"][0]
+    assert world["stations"]["catalog"]["items"][0]["reviews"] >= 2
+    assert world["stations"]["reviews"]["items"]
     assert world["stations"]["vault"]["wallet_minor"] > 0
     assert world["stations"]["kernel"]["rules"]
 

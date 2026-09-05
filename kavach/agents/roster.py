@@ -324,7 +324,9 @@ def build_floor(
         "stations": [
             {"id": "catalog", "name": "Catalog shelf", "purpose": "discovery / candidate set"},
             {"id": "mailbox", "name": "Mailbox", "purpose": "signed OFFER / COUNTER envelopes"},
-            {"id": "vault", "name": "Vault", "purpose": "hold → authorize → settle"},
-            {"id": "board", "name": "Audit board", "purpose": "append-only event chain"},
+            {"id": "vault", "name": "Vault", "purpose": "buyer money box at home"},
+            {"id": "board", "name": "Audit", "purpose": "past buying experiences"},
+            {"id": "home", "name": "Buyer home", "purpose": "buyer starts here; vault + audit on the floor"},
+            {"id": "reviews", "name": "Review wall", "purpose": "untrusted shopper notes"},
         ],
     }

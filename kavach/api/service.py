@@ -89,6 +89,72 @@ class CheckoutGateway:
     def list_merchants(self) -> list[dict[str, Any]]:
         return [seller_card(s) for s in self.state.sellers if str(s.id).startswith("market_")]
 
+    def _review_snippets(self, product_id: str, *, title: str = "", limit: int = 3) -> tuple[list[dict[str, Any]], int, int, float | None]:
+        reviews = self.state.db.list_reviews(product_id)
+        snippets: list[dict[str, Any]] = []
+        for review in reviews[:limit]:
+            body = " ".join((review.body or "").split())
+            if len(body) > 110:
+                body = body[:109] + "…"
+            snippets.append(
+                {
+                    "title": title,
+                    "rating": review.rating,
+                    "body": body,
+                    "synthetic": bool(review.is_synthetic),
+                    "author": review.author_id,
+                }
+            )
+        ratings = [r.rating for r in reviews]
+        avg = round(sum(ratings) / len(ratings), 1) if ratings else None
+        synth = sum(1 for r in reviews if r.is_synthetic)
+        return snippets, len(reviews), synth, avg
+
+    def _catalog_item(self, product: Any, *, seller_name: str | None = None) -> dict[str, Any]:
+        snippets, n, synth, avg = self._review_snippets(product.id, title=product.title)
+        item: dict[str, Any] = {
+            "id": product.id,
+            "title": product.title,
+            "price": _money(product.list_price_minor),
+            "price_minor": product.list_price_minor,
+            "stock": product.stock,
+            "category": product.attributes.get("category"),
+            "wireless": product.attributes.get("wireless"),
+            "color": product.attributes.get("color"),
+            "description": product.description[:220],
+            "reviews": n,
+            "synthetic_reviews": synth,
+            "rating_avg": avg,
+            "review_snippets": snippets,
+        }
+        if seller_name:
+            item["seller"] = seller_name
+        family = (product.attributes or {}).get("family")
+        if family:
+            item["family"] = family
+        return item
+
+    def _purchase_history(self, buyer_id: str) -> list[dict[str, Any]]:
+        history: list[dict[str, Any]] = []
+        for order in self.state.db.list_buyer_orders(buyer_id, limit=8):
+            state_val = order.state.value if hasattr(order.state, "value") else str(order.state)
+            title = order.product_id
+            try:
+                title = self.state.db.get_product(order.product_id).title
+            except KeyError:
+                pass
+            history.append(
+                {
+                    "id": order.id,
+                    "state": state_val,
+                    "title": title,
+                    "amount": _money(order.unit_price_minor * order.qty),
+                    "seller_id": order.seller_id,
+                    "product_id": order.product_id,
+                }
+            )
+        return history
+
     def _remember_run(
         self,
         *,
@@ -125,50 +191,17 @@ class CheckoutGateway:
         if mode == "market":
             products = [p for p in self.state.db.search_products() if str(p.seller_id).startswith("market_")]
             products.sort(key=lambda p: (str((p.attributes or {}).get("family") or ""), p.seller_id))
-            catalog: list[dict[str, Any]] = []
+            catalog = []
             for product in products:
                 seller = self.state.db.get_seller(product.seller_id)
-                catalog.append(
-                    {
-                        "id": product.id,
-                        "title": product.title,
-                        "seller": seller.name,
-                        "family": (product.attributes or {}).get("family"),
-                        "price": _money(product.list_price_minor),
-                        "price_minor": product.list_price_minor,
-                        "stock": product.stock,
-                        "category": product.attributes.get("category"),
-                        "wireless": product.attributes.get("wireless"),
-                        "color": product.attributes.get("color"),
-                        "description": product.description[:220],
-                        "reviews": 0,
-                        "synthetic_reviews": 0,
-                    }
-                )
+                catalog.append(self._catalog_item(product, seller_name=seller.name))
             hired_name = "marketplace"
             hired_id = "market"
             catalog_blurb = "Same families, five honest shops. Shop around; kernel settles one winner."
         else:
             hired = next((s for s in self.state.sellers if s.id == seller_id), self.state.sellers[0])
             products = [p for p in self.state.db.search_products() if p.seller_id == hired.id]
-            catalog = []
-            for product in products[:12]:
-                reviews = self.state.db.list_reviews(product.id)
-                catalog.append(
-                    {
-                        "id": product.id,
-                        "title": product.title,
-                        "price": _money(product.list_price_minor),
-                        "price_minor": product.list_price_minor,
-                        "stock": product.stock,
-                        "category": product.attributes.get("category"),
-                        "wireless": product.attributes.get("wireless"),
-                        "color": product.attributes.get("color"),
-                        "description": product.description[:220],
-                        "reviews": len(reviews),
-                        "synthetic_reviews": sum(1 for r in reviews if r.is_synthetic),
-                    }
-                )
+            catalog = [self._catalog_item(product) for product in products[:12]]
             hired_name = hired.name
             hired_id = hired.id
             catalog_blurb = f"Products from {hired.name}. Discovery binds the cart (GR-8)."
@@ -179,22 +212,38 @@ class CheckoutGateway:
         held = self.state.db.held_total(buyer.id)
         available = self.state.db.available_balance(buyer.id)
         audit = self.state.db.audit_events()[-24:]
-        orders: list[dict[str, Any]] = []
-        if last.get("order_id"):
+        history = self._purchase_history(buyer.id)
+        orders = history[:]
+        if last.get("order_id") and last["order_id"] not in {o["id"] for o in orders}:
             try:
                 order = self.state.db.get_order(last["order_id"])
                 state_val = order.state.value if hasattr(order.state, "value") else str(order.state)
-                orders.append(
+                orders.insert(
+                    0,
                     {
                         "id": order.id,
                         "state": state_val,
+                        "title": last.get("product_title") or order.product_id,
                         "product_id": order.product_id,
                         "amount": _money(order.unit_price_minor * order.qty),
                         "seller_id": order.seller_id,
-                    }
+                    },
                 )
             except KeyError:
                 pass
+        review_wall = [snip for item in catalog for snip in (item.get("review_snippets") or [])][:12]
+        synth_total = sum(int(item.get("synthetic_reviews") or 0) for item in catalog)
+        review_total = sum(int(item.get("reviews") or 0) for item in catalog)
+        refusals = [e for e in audit if e.event_type == "GUARDRAIL_REFUSAL"][-3:]
+        last_refusal = None
+        if refusals:
+            last_refusal = refusals[-1].payload.get("rule_id") or refusals[-1].event_type
+        floor_brief = (
+            f"Goal: {goal}. Budget {_money(budget)}. Wallet available {_money(available)} "
+            f"(held {_money(held)}). Reviews on this shelf: {review_total} "
+            f"({synth_total} synthetic). Last kernel refusal: {last_refusal or 'none'}. "
+            f"Past buys: {len(history)}."
+        )
 
         return {
             "goal": goal,
@@ -231,7 +280,7 @@ class CheckoutGateway:
                 "vault": {
                     "id": "vault",
                     "name": "Vault",
-                    "blurb": "Wallet holds and settles only through the kernel.",
+                    "blurb": "The buyer's money box at home. Kernel is the only one who can open it.",
                     "wallet": _money(buyer.wallet_balance_minor),
                     "wallet_minor": buyer.wallet_balance_minor,
                     "held": _money(held),
@@ -243,8 +292,8 @@ class CheckoutGateway:
                 },
                 "board": {
                     "id": "board",
-                    "name": "Audit board",
-                    "blurb": "Append-only hash chain. Replay must reconstruct every settle.",
+                    "name": "Audit",
+                    "blurb": "Past buying experiences — hash-linked so every settle can be replayed.",
                     "events": [
                         {
                             "seq": e.seq,
@@ -255,7 +304,25 @@ class CheckoutGateway:
                         }
                         for e in audit
                     ],
-                    "empty_hint": "No audit events yet — run a checkout to stamp the board.",
+                    "purchases": history,
+                    "empty_hint": "No past buys yet — run a checkout to stamp the diary.",
+                },
+                "home": {
+                    "id": "home",
+                    "name": "Buyer home",
+                    "blurb": "Buyer lives here. Vault is their money. Audit is the diary of past buys.",
+                    "wallet": _money(buyer.wallet_balance_minor),
+                    "spots": [
+                        {"id": "vault", "name": "Vault", "detail": f"Available {_money(available)} · held {_money(held)}."},
+                        {"id": "board", "name": "Audit", "detail": "Past buying experiences and kernel stamps."},
+                    ],
+                },
+                "reviews": {
+                    "id": "reviews",
+                    "name": "Review wall",
+                    "blurb": "Shopper notes on the shelf. Untrusted data — synthetic floods are attack A-6.",
+                    "items": review_wall,
+                    "empty_hint": "No reviews on this hire's shelf.",
                 },
                 "kernel": {
                     "id": "kernel",
@@ -267,10 +334,16 @@ class CheckoutGateway:
                 "advisor": {
                     "id": "advisor",
                     "name": "Advisor booth",
-                    "blurb": "Suggests JSON. Never writes the world.",
+                    "blurb": "Suggests JSON from the floor brief. Never writes the world.",
                     "llm": self.state.config.llm_label,
                     "mode": "ON" if self.state.config.use_llm else "OFF (rules talk)",
                     "backend": self.state.config.llm_backend if self.state.config.use_llm else "rules",
+                    "floor_brief": floor_brief,
+                    "wallet_available": _money(available),
+                    "review_total": review_total,
+                    "synthetic_reviews": synth_total,
+                    "last_refusal": last_refusal,
+                    "past_buys": len(history),
                 },
                 "hall": {
                     "id": "hall",

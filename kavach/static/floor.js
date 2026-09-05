@@ -13,430 +13,376 @@ const ACCENTS = {
   ink: "#3D2E4A",
 };
 
-const SKIN = "#F4C7A8";
+const SKIN = "#F3C4A3";
+const SKIN_DEEP = "#D59A7A";
 const INK = "#1A1320";
+const GRID = 32;
 
 const LOOKS = {
-  wizard: { h: "#6B5344", extra: { B: "#EDE4D4", T: "#FFD93D", R: "#C0392B", x: "#7A1D1D" } },
-  scientist: { h: "#4A2C17", extra: { g: "#1A1320", W: "#F4F1EA", x: "#7EC8FF" } },
-  astronaut: { h: "#C8B8E8", extra: { H: "#E8E0F8", v: "#3D2E4A", x: "#FFD93D" } },
-  shopkeep: { h: "#4A2C17", extra: { y: "#F4E9C7", x: "#6B4428" } },
-  toxin: { h: "#1B4332", extra: { x: "#95D5B2", y: "#52B788" } },
-  silver: { h: "#B8B8C8", extra: { x: "#E8E8F0", y: "#6C8EF5" } },
-  bait: { h: "#6B2D5B", extra: { x: "#FFD93D", y: "#C0392B" } },
-  faker: { h: "#EDE4D4", extra: { x: "#2A3344", y: "#FFFDF5" } },
-  goldbug: { h: "#8B5A2B", extra: { x: "#FFD93D", y: "#D4A017" } },
-  sybil: { h: "#FF8FAB", extra: { x: "#FFC2D1", y: "#C9184A" } },
-  stuffer: { h: "#6B4428", extra: { x: "#C9A66B", y: "#FFF8E7" } },
-  glitch: { h: "#00F5D4", extra: { x: "#FF006E", y: "#1A1320", v: "#00F5D4" } },
-  sailor: { h: "#1D3557", extra: { x: "#E63946", y: "#F1FAEE" } },
-  nordic: { h: "#E8E0D0", extra: { x: "#457B9D", y: "#1D3557" } },
-  neon: { h: "#7B2CBF", extra: { x: "#FF006E", y: "#00F5D4" } },
-  ridge: { h: "#6B4226", extra: { x: "#A3B18A", y: "#588157" } },
-  ember: { h: "#9B2226", extra: { x: "#E85D04", y: "#FFBA08" } },
-  hacker: { h: "#1A1320", extra: { v: "#4ECDC4", n: "#2A1F33" } },
-  "cat-villager": { h: "#E8A54B", extra: { C: "#FFC8A0", M: "#C0392B" } },
+  wizard: { h: "#5A4030", extra: { H: "#8A6A4A", B: "#EDE4D4", T: "#FFD93D", t: "#FFD93D", p: "#7A1D1D", q: "#4A1010" } },
+  scientist: { h: "#3A2415", extra: { H: "#6B4A2B", p: "#2C3340", q: "#1A1F28", t: "#C0392B", W: "#FFFFFF" } },
+  astronaut: { h: "#C8B8E8", extra: { H: "#E8E0F8", v: "#3D2E4A", x: "#FFD93D", p: "#5C6B8A", q: "#2E3A55", t: "#FFD93D" } },
+  shopkeep: { h: "#4A2C17", extra: { H: "#7A5230", y: "#F4E9C7", x: "#6B4428", t: "#6B4428" } },
+  toxin: { h: "#1B4332", extra: { H: "#2D6A4F", x: "#95D5B2", y: "#52B788", t: "#1B4332" } },
+  silver: { h: "#B8B8C8", extra: { H: "#E8E8F0", x: "#6C8EF5", t: "#6C8EF5" } },
+  bait: { h: "#6B2D5B", extra: { H: "#A34B8A", x: "#FFD93D", y: "#C0392B", t: "#FFD93D" } },
+  faker: { h: "#EDE4D4", extra: { H: "#FFF8EC", x: "#2A3344", t: "#2A3344" } },
+  goldbug: { h: "#8B5A2B", extra: { H: "#C4894A", x: "#FFD93D", t: "#D4A017" } },
+  sybil: { h: "#FF8FAB", extra: { H: "#FFC2D1", x: "#C9184A", t: "#C9184A" } },
+  stuffer: { h: "#6B4428", extra: { H: "#A06A3C", x: "#C9A66B", y: "#FFF8E7", t: "#C9A66B" } },
+  glitch: { h: "#00F5D4", extra: { H: "#9AFFE8", x: "#FF006E", y: "#1A1320", v: "#00F5D4", t: "#FF006E" } },
+  sailor: { h: "#1D3557", extra: { H: "#3D5A80", x: "#E63946", y: "#F1FAEE", t: "#E63946" } },
+  nordic: { h: "#E8E0D0", extra: { H: "#FFF8EC", x: "#457B9D", t: "#1D3557" } },
+  neon: { h: "#7B2CBF", extra: { H: "#C77DFF", x: "#FF006E", t: "#00F5D4" } },
+  ridge: { h: "#6B4226", extra: { H: "#A06A3C", x: "#A3B18A", t: "#588157" } },
+  ember: { h: "#9B2226", extra: { H: "#E85D04", x: "#FFBA08", t: "#FFBA08" } },
+  hacker: { h: "#1A1320", extra: { H: "#3D2E4A", v: "#4ECDC4", n: "#2A1F33", t: "#4ECDC4" } },
+  "cat-villager": { h: "#E8A54B", extra: { H: "#FFD093", C: "#FFC8A0", M: "#C0392B", t: "#C0392B" } },
 };
 
+function r(s) {
+  const row = s || "";
+  if (row.length === GRID) return row;
+  const pad = GRID - row.length;
+  const left = Math.max(0, Math.floor(pad / 2));
+  return `${".".repeat(left)}${row}${".".repeat(Math.max(0, GRID - left - row.length))}`.slice(0, GRID);
+}
+
+function torso({ kind = "suit" } = {}) {
+  const legs = [
+    r("kllllllk"),
+    r("kll..llk"),
+    r("kll..llk"),
+    r("kll..llk"),
+    r("kff..ffk"),
+    r("kff..ffk"),
+    r(""),
+    r(""),
+  ];
+  if (kind === "robe") {
+    return [
+      r("kBBBBBBBk"),
+      r("kkppTTppkk"),
+      r("kpppTTppppk"),
+      r("kppppppppppk"),
+      r("kp.kppppppk.pk"),
+      r("kppppqppqpppk"),
+      r("kppppppppppk"),
+      r("kkppppppppkk"),
+      r("kpppppppppk"),
+      r("kpppppppk"),
+      ...legs,
+    ];
+  }
+  if (kind === "space") {
+    return [
+      r("kvWWWWWvk"),
+      r("kkppWxWppkk"),
+      r("kpppWxxWpppk"),
+      r("kppppWWWWpppk"),
+      r("kp.kppppppk.pk"),
+      r("kkpppxppxppkk"),
+      r("kpppppppppk"),
+      r("kpppppppk"),
+      r("kppppppk"),
+      r("kllllllk"),
+      ...legs.slice(1),
+    ];
+  }
+  if (kind === "apron") {
+    return [
+      r("kyWWWWWyk"),
+      r("kkppWyWppkk"),
+      r("kpppWyyWpppk"),
+      r("kppppWWWWpppk"),
+      r("kp.kppyyppk.pk"),
+      r("kkpppyyyyppkk"),
+      r("kpppyyyyyppk"),
+      r("kppppppppk"),
+      r("kppppppk"),
+      r("kllllllk"),
+      ...legs.slice(1),
+    ];
+  }
+  if (kind === "hoodie") {
+    return [
+      r("knnnnnnnk"),
+      r("kknpntnpnkk"),
+      r("knnnntnnnnk"),
+      r("knnnnntnnnnk"),
+      r("kp.knnnnnnk.pk"),
+      r("kknnnnqnnnnkk"),
+      r("knnnnnnnnnk"),
+      r("knnnnnnnk"),
+      r("kllllllk"),
+      r("kll..llk"),
+      ...legs.slice(2),
+    ];
+  }
+  if (kind === "coat") {
+    return [
+      r("kWWWWWWWk"),
+      r("kkxxWtWxxkk"),
+      r("kxxxWttWxxxk"),
+      r("kxxxxWWWWxxxk"),
+      r("kp.kxxxxxxk.pk"),
+      r("kkxxxxqxxxkk"),
+      r("kxxxxxxxxk"),
+      r("kxxxxxxk"),
+      r("kllllllk"),
+      r("kll..llk"),
+      ...legs.slice(2),
+    ];
+  }
+  return [
+    r("kWWWWWWWk"),
+    r("kkppWtWqqkk"),
+    r("kpppWttWqqqk"),
+    r("kppppWtWqpppk"),
+    r("kppppWWWWpppk"),
+    r("kp.kppppppk.pk"),
+    r("kkpppqppqppkk"),
+    r("kpppppppppk"),
+    r("kpppppppk"),
+    r("kllllllk"),
+    ...legs.slice(1),
+  ];
+}
+
+function faceRows({
+  hair,
+  glasses = false,
+  visor = false,
+  beard = false,
+  blush = false,
+} = {}) {
+  const mound = (hair || [
+    "kkkkkkkkkkkkkk",
+    "kkhhHHhhhhhhhhkk",
+    "khhHHhhhhhhhhhhk",
+    "khhHhhhhsssshhhhk",
+  ]).map(r);
+  while (mound.length < 4) mound.unshift(r(""));
+  const brow = visor ? "kvvvvvvvvvvvvvk" : glasses ? "khhsggssggsshk" : "khhhhshhshhshhhk";
+  const eyeW = visor ? "kvvvWWvvvWWvvvk" : glasses ? "khhsgWWssWWgshk" : "khhhssWWssWWshhk";
+  const eyeP = visor ? "kvvvWEvvvWEvvvk" : glasses ? "khhsgWEssWEgshk" : "khhhssWEssWEshhk";
+  const mid = visor ? "kvvvvvvosvvvvvk" : "khhhhssssossshhk";
+  const mouth = visor ? "kvvvssuusssvvk" : "khhhhsssuusoshhk";
+  const chin = beard ? "khhBBBBBBBBBhk" : blush ? "khhMssssssMoshk" : "khhhhhsssssoshk";
+  const jaw = beard ? "kBBBBBBBBBBBk" : "khhhhhsssssshhk";
+  const under = beard ? ".kBBBBBBBBBk." : ".khhhhsssshhk.";
+  const base = visor ? "..kvvvvvvvk.." : "..kssssssssk..";
+  return [...mound.slice(-4), r(brow), r(eyeW), r(eyeP), r(mid), r(mouth), r(chin), r(jaw), r(under), r(base)];
+}
+
+function sprite(look, body) {
+  const rows = look.concat(body);
+  while (rows.length < GRID) rows.unshift(r(""));
+  return rows.slice(-GRID);
+}
+
 const SPRITES = {
-  scientist: [
-    "................",
-    "....kkkkkkkk....",
-    "...khhhhhhhhk...",
-    "...khhsssshhk...",
-    "...khsgEEgshk...",
-    "...khhsssshhk...",
-    "....kWWWWWWk....",
-    "...kWWpaaapWWk..",
-    "...kWWpxppxWWk..",
-    "...kWWWWWWWWk...",
-    "....kWWWWWWk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  wizard: [
-    ".......kk.......",
-    "......kppk......",
-    ".....kppppk.....",
-    "....kppxpppk....",
-    ".....khhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khsssshk....",
-    ".....kBBBBk.....",
-    "....kppRRppk....",
-    "...kppTppTppk...",
-    "...kppppppppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-  ],
-  astronaut: [
-    "................",
-    ".....kkkkkk.....",
-    "....kHHHHHHk....",
-    "....kHvEEvHk....",
-    "....kHssssHk....",
-    "....kHHxHHxk....",
-    ".....kkkkkk.....",
-    "....kppppppk....",
-    "...kppaappaapk..",
-    "...kppxpppxpk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  shopkeep: [
-    "................",
-    "....xxxxxxxx....",
-    "...xhhhhhhhhx...",
-    "...xhsssssshx...",
-    "...xhsEEsEshx...",
-    "...xhsssssshx...",
-    "....xyyyyyyx....",
-    "....kppaaapk....",
-    "...kppyyyyyypk..",
-    "...kppppppppk...",
-    "....kppxppxk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  toxin: [
-    "................",
-    "...xkkx..xkkx...",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khsssshk....",
-    ".....kppppk.....",
-    "....kppaaapk....",
-    "...kppypppypk...",
-    "...kppppppppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  silver: [
-    "................",
-    "......yyyy......",
-    "....kkkkkkkk....",
-    "...khhhhhhhhk...",
-    "...khssEEsshk...",
-    "...khsssssshk...",
-    "....kxxxxxxk....",
-    "....kppaaapk....",
-    "...kppppppppk...",
-    "...kppypppypk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  bait: [
-    "................",
-    "....xkkkkkkx....",
-    "...khhhhhhhhk...",
-    "...khhsssshhk...",
-    "...khhsEEshhk...",
-    "...khhsssshhk...",
-    "....kyyyyyyk....",
-    "....kppaaapk....",
-    "...kyppppppyk...",
-    "...kppxppxppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  faker: [
-    "................",
-    "....yyyyyyyy....",
-    "...yhhhhhhhhy...",
-    "...yhsssssshy...",
-    "...yhsEEsEshy...",
-    "...yhsssssshy...",
-    "....kxxxxxxk....",
-    "....kppaaapk....",
-    "...kppyyyyyypk..",
-    "...kppppppppk...",
-    "....kppxppxk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  goldbug: [
-    "................",
-    "....kkkkkkkk....",
-    "...khhhhhhhhk...",
-    "...khhsssshhk...",
-    "...khhxEExhhk...",
-    "...khhsssshhk...",
-    "....kyyyyyyk....",
-    "....kppaaapk....",
-    "...kppxppxppk...",
-    "...kppyppyypk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  sybil: [
-    "................",
-    "...xkk....kkx...",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khssyshk....",
-    ".....kxxxxk.....",
-    "....kppaaapk....",
-    "...kppxppxppk...",
-    "...kppppppppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  stuffer: [
-    "................",
-    "....xxxxxxxx....",
-    "...xhhhhhhhhx...",
-    "...xhsssssshx...",
-    "...xhsEEsEshx...",
-    "...xhsssssshx...",
-    "....kyyyyyyk....",
-    "....kppaaapk....",
-    "...kxppppppxk...",
-    "...kppyppyypk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  glitch: [
-    "................",
-    "...xkkkkkkkkx...",
-    "...kvvvvvvvvk...",
-    "...kvssssssvk...",
-    "...kvsEEsEsvk...",
-    "...kvssssssvk...",
-    "....kyyyyyyk....",
-    "....kppaaapk....",
-    "...kxppppppxk...",
-    "...kppxppxppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  sailor: [
-    "................",
-    "....yyyyyyyy....",
-    "...yxxhhhhxxy...",
-    "...yhsssssshy...",
-    "...yhsEEsEshy...",
-    "...yhsssssshy...",
-    "....kxxxxxxk....",
-    "....kppaaapk....",
-    "...kppyppyypk...",
-    "...kppppppppk...",
-    "....kppxppxk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  nordic: [
-    "................",
-    "...yyyyyyyyyy...",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khsssshk....",
-    ".....kxxxxk.....",
-    "....kppaaapk....",
-    "...kppxppxppk...",
-    "...kppppppppk...",
-    "....kppyppyk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  neon: [
-    "................",
-    "....xxxxxxxx....",
-    "...xhhhhhhhhx...",
-    "...xhsssssshx...",
-    "...xhsyEEyhsx...",
-    "...xhsssssshx...",
-    "....kyyyyyyk....",
-    "....kppaaapk....",
-    "...kxppppppxk...",
-    "...kppyppyypk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  ridge: [
-    "................",
-    "......xxxx......",
-    ".....xhhhhx.....",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khsssshk....",
-    ".....kyyyyk.....",
-    "....kppaaapk....",
-    "...kppxppxppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  ember: [
-    "................",
-    "...yyyy....yyy..",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khsssshk....",
-    ".....kxxxxk.....",
-    "....kppaaapk....",
-    "...kyppppppyk...",
-    "...kppxppxppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  hacker: [
-    "................",
-    "....kkkkkkkk....",
-    "...knnnnnnnnk...",
-    "...knhsssshnk...",
-    "...knsvvssvnk...",
-    "...knhsssshnk...",
-    "....knnnnnnk....",
-    "....kppppppk....",
-    "...kppnnnnppk...",
-    "...kppppppppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  "cat-villager": [
-    "................",
-    "...kk......kk...",
-    "...kCk....kCk...",
-    "....khhhhhhk....",
-    "....khsssshk....",
-    "....khsEEshk....",
-    "....khssMshk....",
-    ".....kWWWWk.....",
-    "....kppaaapk....",
-    "...kppppppppk...",
-    "...kppppppppk...",
-    "....kppppppk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
+  scientist: sprite(faceRows(), torso({ kind: "suit" })),
+  wizard: sprite(
+    faceRows({
+      hair: ["kkkkkkkk", "kpppppppk", "kppTTppppk", "kppppssssppk"],
+      beard: true,
+    }),
+    torso({ kind: "robe" }),
+  ),
+  astronaut: sprite(
+    faceRows({
+      hair: ["kkkkkkkkkkkk", "kvvvvvvvvvvk", "kvvvvvvvvvvk", "kvvvvssvvvvvk"],
+      visor: true,
+    }),
+    torso({ kind: "space" }),
+  ),
+  shopkeep: sprite(
+    faceRows({
+      hair: ["kkxxxxxxxxkk", "kxxhhhhhhxxk", "kxhhhhhhhhxk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "apron" }),
+  ),
+  toxin: sprite(
+    faceRows({
+      hair: ["xkkx..xkkx", "khhhhhhhhk", "khhhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "suit" }),
+  ),
+  silver: sprite(
+    faceRows({
+      hair: ["yyyyyyyyyyyy", "kyhhhhhhhhhyk", "khhhhhhhhhhhk", "khhhhhsshhhhk"],
+      glasses: true,
+    }),
+    torso({ kind: "suit" }),
+  ),
+  bait: sprite(
+    faceRows({
+      hair: ["xkkkkkkkkkx", "khhhhhhhhhhk", "khhhhhhhhhhk", "khhHhhhsshhhhk"],
+    }),
+    torso({ kind: "suit" }),
+  ),
+  faker: sprite(
+    faceRows({
+      hair: ["yyyyyyyyyyyy", "kyhhhhhhhhhyk", "kyhhhhhhhhhyk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "suit" }),
+  ),
+  goldbug: sprite(
+    faceRows({
+      hair: ["kkkkkkkkkkkk", "kkhhHHhhhhhhkk", "khhHHhhhhhhhhk", "khhHhhhhsshhhhk"],
+      glasses: true,
+    }),
+    torso({ kind: "suit" }),
+  ),
+  sybil: sprite(
+    faceRows({
+      hair: ["xkk....kkx", "khhhhhhhhk", "khhhhhhhhhk", "khhhhhsshhhhk"],
+      blush: true,
+    }),
+    torso({ kind: "suit" }),
+  ),
+  stuffer: sprite(
+    faceRows({
+      hair: ["kkxxxxxxxxkk", "kxxhhhhhhxxk", "khhhhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "apron" }),
+  ),
+  glitch: sprite(
+    faceRows({
+      hair: ["xkkkkkkkkkx", "kvvvvvvvvvvk", "kvhhhhhhhhvk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "hoodie" }),
+  ),
+  sailor: sprite(
+    faceRows({
+      hair: ["yyyyyyyyyyyy", "yxxhhhhhhxxy", "yhsshhhhhshy", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "coat" }),
+  ),
+  nordic: sprite(
+    faceRows({
+      hair: ["yyyyyyyyyyyyyy", "kyhhhhhhhhhhyk", "khhhhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "coat" }),
+  ),
+  neon: sprite(
+    faceRows({
+      hair: ["kkxxxxxxxxkk", "kxxhhhhhhxxk", "khhhhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "hoodie" }),
+  ),
+  ridge: sprite(
+    faceRows({
+      hair: ["kkxxxxkk", "kxhhhhxk", "khhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "apron" }),
+  ),
+  ember: sprite(
+    faceRows({
+      hair: ["yyyy....yyy", "khhhhhhhhk", "khhhhhhhhhk", "khhhhhsshhhhk"],
+    }),
+    torso({ kind: "suit" }),
+  ),
+  hacker: sprite(
+    faceRows({
+      hair: ["kkkkkkkkkkkk", "knnnnnnnnnnk", "knhhhhhhhhnk", "khhhhhsshhhhk"],
+      visor: true,
+    }),
+    torso({ kind: "hoodie" }),
+  ),
+  "cat-villager": sprite(
+    faceRows({
+      hair: ["kk......kk", "kCk....kCk", "khhhhhhhhk", "khhhhhsshhhhk"],
+      blush: true,
+    }),
+    torso({ kind: "suit" }),
+  ),
 };
 
 const HOME = {
   kernel: { x: 16, y: 28 },
   llm: { x: 45, y: 28 },
-  buyer: { x: 22, y: 78 },
-  seller: { x: 80, y: 34 },
+  buyer: { x: 22, y: 58 },
+  seller: { x: 72, y: 34 },
 };
 
 const SHOP_EDGE = 58;
 
 const SPOTS = {
   entrance: { x: 10, y: 92 },
-  aisle: { x: 28, y: 72 },
+  homeDoor: { x: 30, y: 68 },
+  aisle: { x: 44, y: 68 },
   storeDoor: { x: 58, y: 48 },
   kernelDoor: { x: 16, y: 40 },
-  catalog: { x: 68, y: 50 },
-  mailbox: { x: 88, y: 34 },
-  vault: { x: 80, y: 34 },
-  greet: { x: 78, y: 50 },
+  catalog: { x: 90, y: 48 },
+  reviews: { x: 68, y: 66 },
+  mailbox: { x: 74, y: 32 },
+  vault: { x: 8, y: 82 },
+  board: { x: 16, y: 82 },
+  greet: { x: 74, y: 50 },
   floorBuyer: { x: 68, y: 76 },
-  floorSeller: { x: 86, y: 76 },
+  floorSeller: { x: 80, y: 76 },
   counterBuyer: { x: 68, y: 76 },
-  counterSeller: { x: 86, y: 76 },
+  counterSeller: { x: 80, y: 76 },
   meetBuyer: { x: 68, y: 76 },
-  meetSeller: { x: 86, y: 76 },
+  meetSeller: { x: 80, y: 76 },
   intervene: { x: 54, y: 48 },
   advisorDoor: { x: 45, y: 40 },
 };
 
+function mixHex(hex, toward, amt) {
+  const parse = (h) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const a = parse(hex);
+  const b = parse(toward);
+  const c = a.map((v, i) => Math.round(v + (b[i] - v) * amt));
+  return `#${c.map((n) => n.toString(16).padStart(2, "0")).join("")}`;
+}
+
 function paletteFor(archetype, accent) {
-  const primary = ACCENTS[accent] || ACCENTS.sky;
+  const paper = "#C9BBA8";
+  const raw = ACCENTS[accent] || ACCENTS.sky;
+  const primary = mixHex(raw, paper, 0.38);
   const look = LOOKS[archetype] || LOOKS.scientist;
-  return {
-    k: INK,
+  const pal = {
+    k: "#5C5562",
     h: look.h,
+    H: mixHex(look.h, "#EDE4D4", 0.28),
     s: SKIN,
-    E: INK,
+    o: SKIN_DEEP,
+    m: "#C9897A",
+    E: "#3D3545",
     p: primary,
-    a: "#FFFDF5",
-    W: "#FFFDF5",
-    l: "#3D2E4A",
-    f: "#1A1320",
-    B: "#EDE4D4",
-    T: "#FFD93D",
-    R: "#C0392B",
-    g: "#1A1320",
-    v: "#2A3344",
-    n: "#2A1F33",
-    H: "#E8E0F8",
-    C: "#FFC8A0",
-    M: "#C0392B",
+    q: mixHex(primary, "#4A4450", 0.32),
+    a: "#F2EBE0",
+    W: "#F4EFE6",
+    l: "#3A3542",
+    f: "#3A3542",
+    B: "#E6DCCE",
+    T: mixHex("#FFD93D", paper, 0.4),
+    R: mixHex("#C0392B", paper, 0.28),
+    g: "#5C6570",
+    v: "#4A5160",
+    n: "#3A3344",
+    C: "#E8C4A8",
+    M: mixHex("#C0392B", paper, 0.3),
+    t: mixHex("#C0392B", paper, 0.28),
+    u: "#7A5648",
     x: primary,
-    y: "#FFF8E7",
+    y: "#EFE6D4",
     ...(look.extra || {}),
   };
+  pal.p = mixHex(pal.p, paper, 0.22);
+  pal.x = mixHex(pal.x, paper, 0.22);
+  pal.t = mixHex(pal.t, paper, 0.18);
+  pal.q = mixHex(pal.p, "#4A4450", 0.28);
+  pal.k = "#5C5562";
+  pal.T = mixHex(pal.T, paper, 0.22);
+  return pal;
 }
 
 function setRow(rows, i, value) {
@@ -447,37 +393,35 @@ function setRow(rows, i, value) {
 
 function poseRows(base, pose) {
   const rows = base.slice();
-  const blinkAt = rows.findIndex((row) => row.includes("EE") || row.includes("vv"));
+  const blinkAt = rows.findIndex((row) => /WE|EW|EE/.test(row));
   if (pose === "idle2" && blinkAt >= 0) {
-    rows[blinkAt] = rows[blinkAt].replace(/E/g, "s").replace(/v/g, "s");
+    rows[blinkAt] = rows[blinkAt].replace(/WE/g, "EW");
     return rows;
   }
-  if (pose === "walk1") {
-    return setRow(setRow(rows, 13, ".....kll..lk...."), 14, ".....kff..fk....");
-  }
-  if (pose === "walk2") {
-    return setRow(setRow(rows, 13, ".....kl..llk...."), 14, ".....kf..ffk....");
-  }
+  const stride = (dir) => rows.map((row) => {
+    if (dir < 0) {
+      return row.replace("kll..llk", "kll...lk").replace("kff..ffk", "kff...fk");
+    }
+    return row.replace("kll..llk", "kl...llk").replace("kff..ffk", "kf...ffk");
+  });
+  if (pose === "walk1") return stride(-1);
+  if (pose === "walk2") return stride(1);
   if (pose === "talk1" || pose === "talk2") {
-    const mouth = rows.findIndex((row, i) => i >= 6 && i <= 8 && row.includes("ssss"));
-    if (mouth >= 0) rows[mouth] = rows[mouth].replace("ssss", "sMMs");
-    const body = 9;
-    if (rows[body] && rows[body][1] === ".") {
-      rows[body] = "k" + rows[body].slice(1);
-      if (rows[body - 1] && rows[body - 1][2] === ".") {
-        rows[body - 1] = rows[body - 1].slice(0, 2) + "k" + rows[body - 1].slice(3);
-      }
+    const mouth = rows.findIndex((row) => row.includes("uu"));
+    if (mouth >= 0) rows[mouth] = rows[mouth].replace("uu", "MM");
+    const arm = rows.findIndex((row, i) => i >= 12 && i <= 22 && row.includes("kp.k"));
+    if (arm >= 0) {
+      rows[arm] = rows[arm].replace("kp.k", "kk.k");
     }
-    if (pose === "talk2") {
-      return setRow(setRow(rows, 13, ".....kll..lk...."), 14, ".....kff..fk....");
-    }
+    if (pose === "talk2") return stride(-1);
     return rows;
   }
   return rows;
 }
 
 function spriteSVG(rows, pal, size) {
-  const cell = size / 16;
+  const grid = (rows[0] && rows[0].length) || 16;
+  const cell = size / grid;
   let rects = "";
   rows.forEach((row, y) => {
     [...row].forEach((ch, x) => {
@@ -526,6 +470,17 @@ function stationSVG(kind) {
       <rect x="4" y="4" width="8" height="8" fill="#2A1F33"/>
       <rect x="6" y="6" width="4" height="4" fill="#FFD93D"/>
       <rect x="7" y="7" width="2" height="2" fill="#1A1320"/>
+    </svg>`;
+  }
+  if (kind === "reviews") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#1A1320"/>
+      <rect x="1" y="1" width="14" height="14" fill="#E8D9A0"/>
+      <rect x="3" y="3" width="3" height="3" fill="#FFD93D"/>
+      <rect x="7" y="3" width="3" height="3" fill="#FFD93D"/>
+      <rect x="11" y="3" width="3" height="3" fill="#C9A66B"/>
+      <rect x="3" y="8" width="10" height="2" fill="#6B4428"/>
+      <rect x="3" y="11" width="7" height="2" fill="#8B6F47"/>
     </svg>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
@@ -748,7 +703,7 @@ function overlayFor(status) {
 }
 
 function framesMarkup(archetype, accent) {
-  const frames = framesFor(archetype, accent, 64);
+  const frames = framesFor(archetype, accent, 72);
   return ["idle", "walk", "talk"].map((pose) =>
     `<div class="frames pose-${pose}">${frames[pose].join("")}</div>`
   ).join("");
@@ -796,7 +751,7 @@ function renderStrip(agents) {
     const god = agent.id === "kernel" ? `<span class="god">GOD</span>` : "";
     return `<button type="button" class="panel strip-card ${selected}" data-agent="${agent.id}" style="--accent:${ACCENTS[agent.accent]}">
       <div class="row">
-        <div class="avatar">${spriteSVG((SPRITES[agent.archetype] || SPRITES.scientist), paletteFor(agent.archetype, agent.accent), 40)}</div>
+        <div class="avatar">${spriteSVG((SPRITES[agent.archetype] || SPRITES.scientist), paletteFor(agent.archetype, agent.accent), 48)}</div>
         <div class="who">
           <div class="name">${escapeHtml(agent.name)}${god}</div>
           ${agent.badge ? `<div class="look-badge">${escapeHtml(agent.badge)}</div>` : ""}
@@ -1056,6 +1011,30 @@ function paintStore(card) {
   const badge = card.badge || "SHOP";
   const name = String(card.name || "Seller").split("(")[0].trim();
   if (sign) sign.textContent = `${badge} · ${name}`;
+  const board = document.getElementById("priceBoard");
+  const item = state.floor?.world?.stations?.catalog?.items?.[0];
+  if (board) board.textContent = item?.price || "—";
+  const spec = document.getElementById("specTag");
+  if (spec) {
+    const bits = [];
+    if (item?.category) bits.push(String(item.category).slice(0, 8));
+    if (item?.wireless) bits.push("wifi");
+    if (item?.color) bits.push(String(item.color).slice(0, 6));
+    spec.textContent = bits.length ? bits.join(" · ") : "";
+  }
+  const wall = document.getElementById("reviewWall");
+  if (wall) {
+    const notes = state.floor?.world?.stations?.reviews?.items || [];
+    if (!notes.length) {
+      wall.innerHTML = `<span class="review-empty">no reviews yet</span>`;
+    } else {
+      wall.innerHTML = notes.slice(0, 4).map((n) => {
+        const mark = n.synthetic ? "!" : "*";
+        const body = String(n.body || "").replace(/\s+/g, " ").trim();
+        return `<span class="review-line"><b>${mark}${n.rating}</b> ${escapeHtml(body)}</span>`;
+      }).join("");
+    }
+  }
 }
 
 function paintStoreFromFloor() {
@@ -1078,6 +1057,16 @@ async function sellerGoDesk() {
   await walkTo("seller", HOME.seller);
   face("seller", "left");
   setPose("seller", "idle");
+}
+
+async function buyerLeaveHome() {
+  if (!nearSpot("buyer", HOME.buyer, 8) && !nearSpot("buyer", SPOTS.homeDoor, 8)) {
+    await walkTo("buyer", HOME.buyer);
+  }
+  setBanner("LEAVING HOME");
+  setTicker("buyer steps out of home");
+  await walkTo("buyer", SPOTS.homeDoor);
+  face("buyer", "right");
 }
 
 async function sellerComeOut() {
@@ -1203,8 +1192,8 @@ function setFloorMode(mode) {
   const sub = document.getElementById("floorSub");
   if (sub) {
     sub.textContent = state.mode === "market"
-      ? "Buyer walks out, the shop swaps, buyer walks in. GOD settles the winner."
-      : "Kernel office · advisor office · one tall shop. The kernel decides if money moves.";
+      ? "Buyer walks out of home, the shop swaps, buyer walks in. GOD settles the winner."
+      : "Kernel office · advisor office · buyer home · one tall shop. The kernel decides if money moves.";
   }
   const ticker = document.getElementById("ticker");
   if (ticker && !state.running) {
@@ -1284,7 +1273,10 @@ function renderInspectBody(id, spot) {
         <div class="title">${escapeHtml(item.title)}</div>
         <div class="meta">${item.seller ? escapeHtml(item.seller) + " · " : ""}${escapeHtml(item.price)} · stock ${item.stock} · ${escapeHtml(String(item.category || "—"))}${item.wireless ? " · wireless" : ""}</div>
         <div class="desc">${escapeHtml(item.description || "")}</div>
-        <div class="meta">${item.reviews ? `${item.reviews} reviews${item.synthetic_reviews ? ` (${item.synthetic_reviews} synthetic)` : ""}` : "no reviews"}</div>
+        <div class="meta">${item.reviews ? `${item.reviews} reviews${item.rating_avg != null ? ` · avg ${item.rating_avg}` : ""}${item.synthetic_reviews ? ` · ${item.synthetic_reviews} synthetic` : ""}` : "no reviews"}</div>
+        ${(item.review_snippets || []).map((snip) => `
+          <div class="desc">${snip.synthetic ? "[synth] " : ""}★${snip.rating} ${escapeHtml(snip.body || "")}</div>
+        `).join("")}
       </article>
     `).join("");
   }
@@ -1318,16 +1310,33 @@ function renderInspectBody(id, spot) {
     `;
   }
   if (id === "board") {
-    if (!(data.events || []).length) {
-      return `<p class="inspect-empty">${escapeHtml(data.empty_hint || "Board is blank.")}</p>`;
-    }
-    return data.events.slice().reverse().map((ev) => `
-      <article class="inspect-card">
-        <div class="title">#${ev.seq} · ${escapeHtml(ev.event_type)}</div>
-        <div class="meta">${escapeHtml(ev.actor)} · hash ${escapeHtml(ev.hash)}</div>
-        <div class="desc">${escapeHtml(JSON.stringify(ev.payload || {}))}</div>
-      </article>
-    `).join("");
+    const buys = data.purchases || [];
+    const buyBlock = buys.length
+      ? buys.map((o) => `
+          <article class="inspect-card">
+            <div class="title">${escapeHtml(o.title || o.id)}</div>
+            <div class="meta">${escapeHtml(o.state)} · ${escapeHtml(o.amount)} · ${escapeHtml(o.seller_id)}</div>
+          </article>
+        `).join("")
+      : `<p class="inspect-empty">${escapeHtml(data.empty_hint || "No past buys yet.")}</p>`;
+    const events = data.events || [];
+    const eventBlock = events.length
+      ? events.slice().reverse().slice(0, 8).map((ev) => `
+          <article class="inspect-card">
+            <div class="title">#${ev.seq} · ${escapeHtml(ev.event_type)}</div>
+            <div class="meta">${escapeHtml(ev.actor)} · hash ${escapeHtml(ev.hash)}</div>
+            <div class="desc">${escapeHtml(JSON.stringify(ev.payload || {}))}</div>
+          </article>
+        `).join("")
+      : "";
+    return `
+      <div class="inspect-stats">
+        <div class="inspect-stat"><span class="k">past buys</span><span class="v">${buys.length}</span></div>
+        <div class="inspect-stat"><span class="k">stamps</span><span class="v">${events.length}</span></div>
+      </div>
+      ${buyBlock}
+      ${eventBlock}
+    `;
   }
   if (id === "kernel") {
     const rules = (data.rules || []).map((r) => `
@@ -1346,11 +1355,41 @@ function renderInspectBody(id, spot) {
       <div class="inspect-stats">
         <div class="inspect-stat"><span class="k">mode</span><span class="v">${escapeHtml(data.mode)}</span></div>
         <div class="inspect-stat"><span class="k">backend</span><span class="v">${escapeHtml(data.backend)}</span></div>
+        <div class="inspect-stat"><span class="k">wallet</span><span class="v">${escapeHtml(data.wallet_available || "—")}</span></div>
+        <div class="inspect-stat"><span class="k">reviews</span><span class="v">${escapeHtml(String(data.review_total ?? "—"))}${data.synthetic_reviews ? ` (${data.synthetic_reviews} synth)` : ""}</span></div>
       </div>
       <article class="inspect-card">
         <div class="title">${escapeHtml(data.llm || "Advisor")}</div>
-        <div class="desc">Output is validated and clamped. Garbage → deterministic fallback. Never writes DB rows.</div>
+        <div class="desc">${escapeHtml(data.floor_brief || "Output is validated and clamped. Garbage → deterministic fallback. Never writes DB rows.")}</div>
       </article>
+    `;
+  }
+  if (id === "reviews") {
+    const notes = data.items || [];
+    if (!notes.length) {
+      return `<p class="inspect-empty">${escapeHtml(data.empty_hint || "No reviews on this shelf.")}</p>`;
+    }
+    return notes.map((snip) => `
+      <article class="inspect-card">
+        <div class="title">${escapeHtml(snip.title || "Review")} · ★${snip.rating}${snip.synthetic ? " · synthetic" : ""}</div>
+        <div class="meta">${escapeHtml(snip.author || "shopper")}</div>
+        <div class="desc">${escapeHtml(snip.body || "")}</div>
+      </article>
+    `).join("");
+  }
+  if (id === "home") {
+    const spots = data.spots || [];
+    return `
+      <div class="inspect-stats">
+        <div class="inspect-stat"><span class="k">who</span><span class="v">buyer</span></div>
+        <div class="inspect-stat"><span class="k">wallet</span><span class="v">${escapeHtml(data.wallet || "—")}</span></div>
+      </div>
+      ${spots.map((s) => `
+        <article class="inspect-card">
+          <div class="title">${escapeHtml(s.name)}</div>
+          <div class="desc">${escapeHtml(s.detail)}</div>
+        </article>
+      `).join("")}
     `;
   }
   if (id === "hall") {
@@ -1386,6 +1425,7 @@ function openInspect(id, { spot = null, source = null } = {}) {
   setTicker(`inspecting ${id}`);
   if (id === "kernel") selectAgent("kernel");
   if (id === "advisor") selectAgent("llm");
+  if (id === "home" || id === "vault" || id === "board") selectAgent("buyer");
 }
 
 
@@ -1553,10 +1593,11 @@ async function sendHome({ instant = false } = {}) {
 async function choreograph(phase) {
   if (phase === "setup" || phase === "intent") {
     setBanner("BRIEFING");
-    setTicker("buyer checks in with advisor");
+    setTicker("buyer leaves home to check in with advisor");
     focusCamera(["buyer", "llm"], 1.04);
     setAgentStatus("buyer", "thinking", "asking");
     if (defaultStatus("llm")[0] !== "ghost") setAgentStatus("llm", "thinking", "thinking");
+    await buyerLeaveHome();
     await walkTo("buyer", SPOTS.advisorDoor);
     await walkTo("buyer", HOME.llm);
     faceEachOther("buyer", "llm");
@@ -1567,7 +1608,7 @@ async function choreograph(phase) {
   }
   if (phase === "discovery") {
     setBanner("IN STORE");
-    setTicker("buyer walks into the shop and reads the shelf");
+    setTicker("buyer walks the aisle into the shop and reads shelf + reviews");
     focusCamera(["buyer", "seller"], 1);
     setAgentStatus("buyer", "working", "browsing");
     setPose("llm", "idle");
@@ -1575,7 +1616,10 @@ async function choreograph(phase) {
     await walkTo("buyer", SPOTS.storeDoor);
     setTicker("store owner comes out from the counter");
     await Promise.all([
-      walkTo("buyer", SPOTS.catalog),
+      (async () => {
+        await walkTo("buyer", SPOTS.catalog);
+        await walkTo("buyer", SPOTS.reviews);
+      })(),
       sellerComeOut(),
     ]);
     face("buyer", "right");
@@ -1698,6 +1742,7 @@ async function choreograph(phase) {
       sellerGoDesk(),
     ]);
     face("seller", "left");
+    face("buyer", "left");
     setDoor(false);
     focusCamera([], 1);
     face("kernel", "right");
@@ -1839,12 +1884,11 @@ async function authorize() {
   state.posePhase = null;
   resetStatuses();
   await sendHome({ instant: true });
-  setPlace("buyer", SPOTS.entrance, { instant: true });
+  await buyerLeaveHome();
   setBanner("ENTERING");
-  setTicker("buyer is walking onto the floor");
+  setTicker("buyer is on the aisle");
   focusCamera(["buyer"], 1.04);
-  appendTalk({ who: "narrator", text: "Buyer is walking onto the floor…", kind: "beat" }, { fresh: false });
-  await walkTo("buyer", HOME.buyer);
+  appendTalk({ who: "narrator", text: "Buyer steps out of home…", kind: "beat" }, { fresh: false });
   try {
     const res = await fetch("/v1/checkout/authorize", {
       method: "POST",
@@ -1940,12 +1984,11 @@ async function shopMarket() {
   state.posePhase = null;
   resetStatuses();
   await sendHome({ instant: true });
-  setPlace("buyer", SPOTS.entrance, { instant: true });
+  await buyerLeaveHome();
   setBanner("MARKET");
-  setTicker("buyer is walking onto the market floor");
+  setTicker("buyer is walking the market from home");
   focusCamera(["buyer"], 1.04);
-  appendTalk({ who: "narrator", text: "Buyer is walking every stall…", kind: "beat" }, { fresh: false });
-  await walkTo("buyer", HOME.buyer);
+  appendTalk({ who: "narrator", text: "Buyer steps out of home to walk every stall…", kind: "beat" }, { fresh: false });
   try {
     const res = await fetch("/v1/market/shop", {
       method: "POST",
@@ -2033,7 +2076,7 @@ async function shopMarket() {
 
 function wire() {
   document.getElementById("envelope").innerHTML = envelopeSVG();
-  ["catalog", "mailbox", "vault", "board"].forEach((id) => {
+  ["catalog", "mailbox", "vault", "board", "reviews"].forEach((id) => {
     const node = document.querySelector(`.st-${id} .sprite`);
     if (node) node.innerHTML = stationSVG(id);
   });

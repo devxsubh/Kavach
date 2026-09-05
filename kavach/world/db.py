@@ -155,6 +155,13 @@ class Database:
             raise KeyError(order_id)
         return Order(id=row["id"], buyer_id=row["buyer_id"], seller_id=row["seller_id"], product_id=row["product_id"], unit_price_minor=row["unit_price_minor"], qty=row["qty"], cart_mandate_id=row["cart_mandate_id"], payment_mandate_id=row["payment_mandate_id"], state=row["state"], idempotency_key=row["idempotency_key"], created_at=row["created_at"])
 
+    def list_buyer_orders(self, buyer_id: str, *, limit: int = 12) -> list[Order]:
+        rows = self.conn.execute(
+            "SELECT id FROM orders WHERE buyer_id=? ORDER BY created_at DESC LIMIT ?",
+            (buyer_id, limit),
+        ).fetchall()
+        return [self.get_order(row["id"]) for row in rows]
+
     def update_order(self, order: Order) -> None:
         self.conn.execute("UPDATE orders SET payment_mandate_id=?, state=? WHERE id=?", (order.payment_mandate_id, order.state.value, order.id))
 

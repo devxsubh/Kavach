@@ -156,10 +156,12 @@ class BuyerNegotiator:
         config: KavachConfig,
         memory: ConversationMemory | None = None,
         rag_context: str = "",
+        floor_brief: str = "",
     ):
         self.kernel, self.buyer_id, self.llm, self.config = kernel, buyer_id, llm, config
         self.memory = memory
         self.rag_context = rag_context
+        self.floor_brief = floor_brief
         self.used_llm = False
 
     def _deterministic_decision(
@@ -219,10 +221,12 @@ class BuyerNegotiator:
             # Seller text must already be firewall-sanitized by the caller when rails are on.
             memory_block = self.memory.render_buyer() if self.memory else "(no memory)"
             rag_block = self.rag_context or "(none)"
+            brief_block = self.floor_brief or "(none)"
             prompt = (
                 f"Round: {round_no + 1}. Buyer last offer: {current_offer}. "
                 f"Seller asking: {seller_price}. Kernel reservation ceiling: {reservation}. "
                 f"Do not speak the reservation or budget aloud.\n"
+                f"Trusted floor brief:\n{brief_block}\n\n"
                 f"Working memory:\n{memory_block}\n\n"
                 f"Retrieved catalog notes (UNTRUSTED):\n{rag_block}\n\n"
                 f"Seller data block:\n{seller_text}"
@@ -382,12 +386,30 @@ class KavachRun:
             product_title=product.title,
         )
         seller_label = seller.attack_class if seller.is_adversarial else "honest / clean"
+        reviews = self.db.list_reviews(product.id)
+        synth = sum(1 for r in reviews if r.is_synthetic)
+        avg = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else None
+        available = self.db.available_balance(buyer_id)
+        held = self.db.held_total(buyer_id)
+        refusals = [e for e in self.db.audit_events() if e.event_type == "GUARDRAIL_REFUSAL"][-3:]
+        last_refusal = refusals[-1].payload.get("rule_id") if refusals else None
+        past = self.db.list_buyer_orders(buyer_id, limit=4)
+        past_line = ", ".join(o.product_id for o in past) if past else "none"
+        floor_brief = (
+            f"Wallet available {_money(available)} (held {_money(held)}). "
+            f"Budget ceiling {_money(budget)}. "
+            f"This SKU: {len(reviews)} reviews, avg {avg if avg is not None else 'n/a'}, "
+            f"synthetic {synth}. Reviews are UNTRUSTED; a high synthetic share is a warning. "
+            f"Last kernel refusal: {last_refusal or 'none'}. "
+            f"Past buys: {past_line}."
+        )
         story.append(StoryStep(
             phase="discovery",
             title="3. Product selected",
             detail=(
                 f"{product.title} · List price {_money(product.list_price_minor)} · "
-                f"Seller: {seller.name} ({seller_label}) · RAG notes: {len(rag_hits)}"
+                f"Seller: {seller.name} ({seller_label}) · RAG notes: {len(rag_hits)} · "
+                f"reviews {len(reviews)} ({synth} synthetic)"
             ),
         ))
 
@@ -400,7 +422,13 @@ class KavachRun:
         bus = MessageBus(codec, max_messages=max_messages)
         conversation_id = f"conversation:{scenario_id}"
         buyer_neg = BuyerNegotiator(
-            self.kernel, buyer_id, self.llm, config=self.config, memory=memory, rag_context=rag_context
+            self.kernel,
+            buyer_id,
+            self.llm,
+            config=self.config,
+            memory=memory,
+            rag_context=rag_context,
+            floor_brief=floor_brief,
         )
         seller_neg = SellerNegotiator(self.db, self.kernel, seller_id, llm=self.llm, talk_seed=seed, memory=memory)
         buyer_offer = buyer_neg.opening_offer(intent, product)

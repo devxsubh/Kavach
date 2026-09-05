@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/floor.css?v=23" />
+  <link rel="stylesheet" href="/static/floor.css?v=37" />
 </head>
 <body data-seller="{{SELLER_ID}}" data-guardrails="{{GUARDRAILS}}">
   <div class="app">
     <header class="panel titlebar">
       <div>
         <h1>Kavach</h1>
-        <div class="sub" id="floorSub">Kernel office · advisor office · one tall shop. The kernel decides if money moves.</div>
+        <div class="sub" id="floorSub">Kernel office · advisor office · buyer home · one tall shop. The kernel decides if money moves.</div>
       </div>
       <div class="pills">
         <div class="pill"><span class="dot single" id="railDot"></span> Rail <strong id="railLabel">…</strong></div>
@@ -37,11 +37,7 @@
               <button type="button" class="view-btn active" data-view="floor" id="viewFloor" aria-pressed="true">Floor</button>
               <button type="button" class="view-btn" data-view="chat" id="viewChat" aria-pressed="false">Chat</button>
             </div>
-            <div class="view-toggle" role="group" aria-label="Ledger inspect">
-              <button type="button" class="view-btn" data-inspect="vault" aria-label="Open vault">Vault</button>
-              <button type="button" class="view-btn" data-inspect="board" aria-label="Open audit board">Audit</button>
-            </div>
-            <div class="beat floor-beat" id="beat">Kernel and advisor keep their offices. The shop is the whole right wall.</div>
+            <div class="beat floor-beat" id="beat">Buyer lives in home — vault and audit sit on that floor. Shop is the right wall.</div>
           </div>
           <div class="office" id="office">
             <div class="tiles" aria-hidden="true"></div>
@@ -73,14 +69,43 @@
               <div class="furn plant p2" aria-hidden="true"></div>
             </div>
 
+            <div class="room room-home" id="home">
+              <button type="button" class="room-title hot-spot" data-inspect="home" aria-label="Open buyer home">home</button>
+              <div class="home-mat" aria-hidden="true"></div>
+              <div class="furn bed" aria-hidden="true"></div>
+              <div class="furn plant p-home" aria-hidden="true"></div>
+              <div class="lamp home-lamp" aria-hidden="true"></div>
+              <button type="button" class="floor-box box-vault hot-spot st-vault" data-inspect="vault" aria-label="Open vault">
+                <div class="sprite"></div>
+                <span class="box-label">vault</span>
+              </button>
+              <button type="button" class="floor-box box-board hot-spot st-board" data-inspect="board" aria-label="Open audit board">
+                <div class="sprite"></div>
+                <span class="box-label">audit</span>
+              </button>
+              <div class="home-door" aria-hidden="true"></div>
+            </div>
+
             <div class="room room-store" id="store">
               <div class="awning" aria-hidden="true"></div>
               <div class="store-sign" id="storeSign">SHOP</div>
+              <div class="hours-sign" aria-hidden="true">OPEN</div>
+              <div class="price-board" id="priceBoard" aria-hidden="true">—</div>
+              <div class="spec-tag" id="specTag" aria-hidden="true"></div>
               <div class="shop-counter" aria-hidden="true"></div>
               <button type="button" class="station st-mailbox hot-spot" data-inspect="mailbox" aria-label="Open cash register">
                 <div class="sprite"></div>
               </button>
-              <button type="button" class="station st-catalog hot-spot" data-inspect="catalog" aria-label="Open catalog shelf"></button>
+              <button type="button" class="station st-catalog hot-spot" data-inspect="catalog" aria-label="Open catalog shelf">
+                <span class="shelf-row" aria-hidden="true"><i></i><i></i></span>
+                <span class="shelf-row" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="shelf-row" aria-hidden="true"><i></i><i></i></span>
+                <span class="shelf-row" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="shelf-caption">shelf</span>
+              </button>
+              <button type="button" class="station st-reviews hot-spot" data-inspect="reviews" aria-label="Open review wall">
+                <div class="review-wall-copy" id="reviewWall">reviews</div>
+              </button>
               <div class="store-door" aria-hidden="true"></div>
               <div class="stall-row" id="stallRow" hidden></div>
             </div>
@@ -176,6 +201,6 @@
     </div>
   </div>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="/static/floor.js?v=23"></script>
+  <script src="/static/floor.js?v=37"></script>
 </body>
 </html>
