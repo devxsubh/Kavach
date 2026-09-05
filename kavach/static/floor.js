@@ -5,16 +5,36 @@ const ACCENTS = {
   lilac: "#B197FC",
   peach: "#FFA07A",
   mint: "#6BCF7F",
+  moss: "#4A7C59",
+  gold: "#D4A017",
+  navy: "#2E5A88",
+  frost: "#7EB8C9",
+  ember: "#E85D04",
+  ink: "#3D2E4A",
 };
 
 const SKIN = "#F4C7A8";
 const INK = "#1A1320";
 
 const LOOKS = {
-  wizard: { h: "#6B5344", extra: { B: "#EDE4D4", T: "#FFD93D", R: "#C0392B" } },
-  scientist: { h: "#4A2C17", extra: { g: "#1A1320", W: "#F4F1EA" } },
+  wizard: { h: "#6B5344", extra: { B: "#EDE4D4", T: "#FFD93D", R: "#C0392B", x: "#7A1D1D" } },
+  scientist: { h: "#4A2C17", extra: { g: "#1A1320", W: "#F4F1EA", x: "#7EC8FF" } },
+  astronaut: { h: "#C8B8E8", extra: { H: "#E8E0F8", v: "#3D2E4A", x: "#FFD93D" } },
+  shopkeep: { h: "#4A2C17", extra: { y: "#F4E9C7", x: "#6B4428" } },
+  toxin: { h: "#1B4332", extra: { x: "#95D5B2", y: "#52B788" } },
+  silver: { h: "#B8B8C8", extra: { x: "#E8E8F0", y: "#6C8EF5" } },
+  bait: { h: "#6B2D5B", extra: { x: "#FFD93D", y: "#C0392B" } },
+  faker: { h: "#EDE4D4", extra: { x: "#2A3344", y: "#FFFDF5" } },
+  goldbug: { h: "#8B5A2B", extra: { x: "#FFD93D", y: "#D4A017" } },
+  sybil: { h: "#FF8FAB", extra: { x: "#FFC2D1", y: "#C9184A" } },
+  stuffer: { h: "#6B4428", extra: { x: "#C9A66B", y: "#FFF8E7" } },
+  glitch: { h: "#00F5D4", extra: { x: "#FF006E", y: "#1A1320", v: "#00F5D4" } },
+  sailor: { h: "#1D3557", extra: { x: "#E63946", y: "#F1FAEE" } },
+  nordic: { h: "#E8E0D0", extra: { x: "#457B9D", y: "#1D3557" } },
+  neon: { h: "#7B2CBF", extra: { x: "#FF006E", y: "#00F5D4" } },
+  ridge: { h: "#6B4226", extra: { x: "#A3B18A", y: "#588157" } },
+  ember: { h: "#9B2226", extra: { x: "#E85D04", y: "#FFBA08" } },
   hacker: { h: "#1A1320", extra: { v: "#4ECDC4", n: "#2A1F33" } },
-  astronaut: { h: "#C8B8E8", extra: { H: "#E8E0F8", v: "#3D2E4A" } },
   "cat-villager": { h: "#E8A54B", extra: { C: "#FFC8A0", M: "#C0392B" } },
 };
 
@@ -28,27 +48,9 @@ const SPRITES = {
     "...khhsssshhk...",
     "....kWWWWWWk....",
     "...kWWpaaapWWk..",
-    "...kWWpppppWWk..",
+    "...kWWpxppxWWk..",
     "...kWWWWWWWWk...",
     "....kWWWWWWk....",
-    ".....kll.llk....",
-    ".....kll.llk....",
-    ".....kff.ffk....",
-    "................",
-    "................",
-  ],
-  hacker: [
-    "................",
-    "....kkkkkkkk....",
-    "...knnnnnnnnk...",
-    "...knhsssshnk...",
-    "...knsvvssvnk...",
-    "...knhsssshnk...",
-    "....knnnnnnk....",
-    "....kppppppk....",
-    "...kppnnnnppk...",
-    "...kppppppppk...",
-    "....kppppppk....",
     ".....kll.llk....",
     ".....kll.llk....",
     ".....kff.ffk....",
@@ -59,7 +61,7 @@ const SPRITES = {
     ".......kk.......",
     "......kppk......",
     ".....kppppk.....",
-    "....kppppppk....",
+    "....kppxpppk....",
     ".....khhhhhk....",
     "....khsssshk....",
     "....khsEEshk....",
@@ -79,10 +81,280 @@ const SPRITES = {
     "....kHHHHHHk....",
     "....kHvEEvHk....",
     "....kHssssHk....",
-    "....kHHHHHHk....",
+    "....kHHxHHxk....",
     ".....kkkkkk.....",
     "....kppppppk....",
     "...kppaappaapk..",
+    "...kppxpppxpk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  shopkeep: [
+    "................",
+    "....xxxxxxxx....",
+    "...xhhhhhhhhx...",
+    "...xhsssssshx...",
+    "...xhsEEsEshx...",
+    "...xhsssssshx...",
+    "....xyyyyyyx....",
+    "....kppaaapk....",
+    "...kppyyyyyypk..",
+    "...kppppppppk...",
+    "....kppxppxk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  toxin: [
+    "................",
+    "...xkkx..xkkx...",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....khsEEshk....",
+    "....khsssshk....",
+    ".....kppppk.....",
+    "....kppaaapk....",
+    "...kppypppypk...",
+    "...kppppppppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  silver: [
+    "................",
+    "......yyyy......",
+    "....kkkkkkkk....",
+    "...khhhhhhhhk...",
+    "...khssEEsshk...",
+    "...khsssssshk...",
+    "....kxxxxxxk....",
+    "....kppaaapk....",
+    "...kppppppppk...",
+    "...kppypppypk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  bait: [
+    "................",
+    "....xkkkkkkx....",
+    "...khhhhhhhhk...",
+    "...khhsssshhk...",
+    "...khhsEEshhk...",
+    "...khhsssshhk...",
+    "....kyyyyyyk....",
+    "....kppaaapk....",
+    "...kyppppppyk...",
+    "...kppxppxppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  faker: [
+    "................",
+    "....yyyyyyyy....",
+    "...yhhhhhhhhy...",
+    "...yhsssssshy...",
+    "...yhsEEsEshy...",
+    "...yhsssssshy...",
+    "....kxxxxxxk....",
+    "....kppaaapk....",
+    "...kppyyyyyypk..",
+    "...kppppppppk...",
+    "....kppxppxk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  goldbug: [
+    "................",
+    "....kkkkkkkk....",
+    "...khhhhhhhhk...",
+    "...khhsssshhk...",
+    "...khhxEExhhk...",
+    "...khhsssshhk...",
+    "....kyyyyyyk....",
+    "....kppaaapk....",
+    "...kppxppxppk...",
+    "...kppyppyypk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  sybil: [
+    "................",
+    "...xkk....kkx...",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....khsEEshk....",
+    "....khssyshk....",
+    ".....kxxxxk.....",
+    "....kppaaapk....",
+    "...kppxppxppk...",
+    "...kppppppppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  stuffer: [
+    "................",
+    "....xxxxxxxx....",
+    "...xhhhhhhhhx...",
+    "...xhsssssshx...",
+    "...xhsEEsEshx...",
+    "...xhsssssshx...",
+    "....kyyyyyyk....",
+    "....kppaaapk....",
+    "...kxppppppxk...",
+    "...kppyppyypk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  glitch: [
+    "................",
+    "...xkkkkkkkkx...",
+    "...kvvvvvvvvk...",
+    "...kvssssssvk...",
+    "...kvsEEsEsvk...",
+    "...kvssssssvk...",
+    "....kyyyyyyk....",
+    "....kppaaapk....",
+    "...kxppppppxk...",
+    "...kppxppxppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  sailor: [
+    "................",
+    "....yyyyyyyy....",
+    "...yxxhhhhxxy...",
+    "...yhsssssshy...",
+    "...yhsEEsEshy...",
+    "...yhsssssshy...",
+    "....kxxxxxxk....",
+    "....kppaaapk....",
+    "...kppyppyypk...",
+    "...kppppppppk...",
+    "....kppxppxk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  nordic: [
+    "................",
+    "...yyyyyyyyyy...",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....khsEEshk....",
+    "....khsssshk....",
+    ".....kxxxxk.....",
+    "....kppaaapk....",
+    "...kppxppxppk...",
+    "...kppppppppk...",
+    "....kppyppyk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  neon: [
+    "................",
+    "....xxxxxxxx....",
+    "...xhhhhhhhhx...",
+    "...xhsssssshx...",
+    "...xhsyEEyhsx...",
+    "...xhsssssshx...",
+    "....kyyyyyyk....",
+    "....kppaaapk....",
+    "...kxppppppxk...",
+    "...kppyppyypk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  ridge: [
+    "................",
+    "......xxxx......",
+    ".....xhhhhx.....",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....khsEEshk....",
+    "....khsssshk....",
+    ".....kyyyyk.....",
+    "....kppaaapk....",
+    "...kppxppxppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  ember: [
+    "................",
+    "...yyyy....yyy..",
+    "....khhhhhhk....",
+    "....khsssshk....",
+    "....khsEEshk....",
+    "....khsssshk....",
+    ".....kxxxxk.....",
+    "....kppaaapk....",
+    "...kyppppppyk...",
+    "...kppxppxppk...",
+    "....kppppppk....",
+    ".....kll.llk....",
+    ".....kll.llk....",
+    ".....kff.ffk....",
+    "................",
+    "................",
+  ],
+  hacker: [
+    "................",
+    "....kkkkkkkk....",
+    "...knnnnnnnnk...",
+    "...knhsssshnk...",
+    "...knsvvssvnk...",
+    "...knhsssshnk...",
+    "....knnnnnnk....",
+    "....kppppppk....",
+    "...kppnnnnppk...",
     "...kppppppppk...",
     "....kppppppk....",
     ".....kll.llk....",
@@ -112,23 +384,31 @@ const SPRITES = {
 };
 
 const HOME = {
-  /* Stand at chairs in front of desks (office %). */
-  kernel: { x: 18, y: 32 },
-  llm: { x: 50, y: 32 },
-  buyer: { x: 12, y: 88 },
-  seller: { x: 36, y: 88 },
+  kernel: { x: 16, y: 28 },
+  llm: { x: 45, y: 28 },
+  buyer: { x: 22, y: 78 },
+  seller: { x: 80, y: 34 },
 };
 
+const SHOP_EDGE = 58;
+
 const SPOTS = {
-  entrance: { x: 8, y: 94 },
+  entrance: { x: 10, y: 92 },
+  aisle: { x: 28, y: 72 },
+  storeDoor: { x: 58, y: 48 },
   kernelDoor: { x: 16, y: 40 },
-  catalog: { x: 84, y: 52 },
-  mailbox: { x: 84, y: 82 },
-  vault: { x: 84, y: 22 },
-  meetBuyer: { x: 28, y: 64 },
-  meetSeller: { x: 48, y: 64 },
-  intervene: { x: 38, y: 58 },
-  advisorDoor: { x: 48, y: 40 },
+  catalog: { x: 68, y: 50 },
+  mailbox: { x: 88, y: 34 },
+  vault: { x: 80, y: 34 },
+  greet: { x: 78, y: 50 },
+  floorBuyer: { x: 68, y: 76 },
+  floorSeller: { x: 86, y: 76 },
+  counterBuyer: { x: 68, y: 76 },
+  counterSeller: { x: 86, y: 76 },
+  meetBuyer: { x: 68, y: 76 },
+  meetSeller: { x: 86, y: 76 },
+  intervene: { x: 54, y: 48 },
+  advisorDoor: { x: 45, y: 40 },
 };
 
 function paletteFor(archetype, accent) {
@@ -153,6 +433,8 @@ function paletteFor(archetype, accent) {
     H: "#E8E0F8",
     C: "#FFC8A0",
     M: "#C0392B",
+    x: primary,
+    y: "#FFF8E7",
     ...(look.extra || {}),
   };
 }
@@ -217,19 +499,41 @@ function framesFor(archetype, accent, size) {
 }
 
 function stationSVG(kind) {
-  const maps = {
-    catalog: { fill: "#8B6F47", bars: "#FFD93D" },
-    mailbox: { fill: "#FF6B6B", bars: "#FFFDF5" },
-    vault: { fill: "#3D2E4A", bars: "#FFD93D" },
-    board: { fill: "#C9A66B", bars: "#6BCF7F" },
-  };
-  const c = maps[kind] || maps.catalog;
+  if (kind === "catalog") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#1A1320"/>
+      <rect x="1" y="1" width="14" height="14" fill="#8B6F47"/>
+      <rect x="2" y="3" width="12" height="2" fill="#FFD93D"/>
+      <rect x="2" y="6" width="5" height="3" fill="#FFF8E7"/>
+      <rect x="8" y="6" width="5" height="3" fill="#E8D9A0"/>
+      <rect x="2" y="10" width="5" height="3" fill="#C9A66B"/>
+      <rect x="8" y="10" width="5" height="3" fill="#FFF8E7"/>
+    </svg>`;
+  }
+  if (kind === "mailbox") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#1A1320"/>
+      <rect x="3" y="2" width="10" height="7" fill="#2A3344"/>
+      <rect x="5" y="4" width="6" height="3" fill="#6BCF7F"/>
+      <rect x="2" y="9" width="12" height="5" fill="#C0392B"/>
+      <rect x="4" y="11" width="8" height="2" fill="#FFFDF5"/>
+    </svg>`;
+  }
+  if (kind === "vault") {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect width="16" height="16" fill="#1A1320"/>
+      <rect x="2" y="2" width="12" height="12" fill="#3D2E4A"/>
+      <rect x="4" y="4" width="8" height="8" fill="#2A1F33"/>
+      <rect x="6" y="6" width="4" height="4" fill="#FFD93D"/>
+      <rect x="7" y="7" width="2" height="2" fill="#1A1320"/>
+    </svg>`;
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
     <rect width="16" height="16" fill="#1A1320"/>
-    <rect x="1" y="1" width="14" height="14" fill="${c.fill}"/>
-    <rect x="3" y="3" width="4" height="4" fill="${c.bars}"/>
-    <rect x="9" y="3" width="4" height="4" fill="${c.bars}"/>
-    <rect x="3" y="9" width="10" height="4" fill="#FFF8E7"/>
+    <rect x="2" y="2" width="12" height="12" fill="#C9A66B"/>
+    <rect x="4" y="4" width="8" height="2" fill="#6BCF7F"/>
+    <rect x="4" y="7" width="8" height="2" fill="#FFF8E7"/>
+    <rect x="4" y="10" width="8" height="2" fill="#6BCF7F"/>
   </svg>`;
 }
 
@@ -308,6 +612,7 @@ const state = {
   posePhase: null,
   view: "floor",
   inspect: null,
+  mode: "attack",
 };
 
 function setTicker(text) {
@@ -459,18 +764,23 @@ function renderActors(agents) {
     const selected = agent.id === state.selected ? "selected" : "";
     const ghost = agent.status.status === "ghost" ? "ghost" : "";
     const home = HOME[agent.id] || HOME.buyer;
-    return `<button type="button" class="actor actor-${agent.id} pose-idle face-right ${selected} ${ghost}" data-agent="${agent.id}" style="--accent:${ACCENTS[agent.accent]};--x:${home.x}%;--y:${home.y}%;--z:${10 + Math.round(home.y)};--walk:0ms">
+    return `<button type="button" class="actor actor-${agent.id} pose-idle face-right ${selected} ${ghost}" data-agent="${agent.id}" style="--accent:${ACCENTS[agent.accent] || ACCENTS.sky};--x:${home.x}%;--y:${home.y}%;--z:${10 + Math.round(home.y)};--walk:0ms">
       <div class="actor-bubble" hidden></div>
       <div class="tag-float ${agent.status.status}">${escapeHtml(agent.status.label)}</div>
       ${overlayFor(agent.status.status)}
       <div class="sprite-wrap">${framesMarkup(agent.archetype, agent.accent)}</div>
       <div class="shadow"></div>
-      <div class="nameplate">${escapeHtml(agent.name)}${agent.id === "kernel" ? " ★" : ""}</div>
+      <div class="nameplate"><span class="who">${escapeHtml(agent.name)}</span>${agent.badge ? `<span class="badge">${escapeHtml(agent.badge)}</span>` : ""}</div>
     </button>`;
   }).join("");
   agents.forEach((agent) => {
     state.place[agent.id] = { ...(HOME[agent.id] || HOME.buyer) };
   });
+  const office = document.getElementById("office");
+  const seller = agents.find((a) => a.id === "seller");
+  const buyer = agents.find((a) => a.id === "buyer");
+  if (office && seller) office.style.setProperty("--seller-accent", ACCENTS[seller.accent] || ACCENTS.coral);
+  if (office && buyer) office.style.setProperty("--buyer-accent", ACCENTS[buyer.accent] || ACCENTS.sky);
   const kernel = agents.find((a) => a.id === "kernel");
   const portrait = document.getElementById("kernelPortrait");
   if (portrait && kernel) {
@@ -489,6 +799,7 @@ function renderStrip(agents) {
         <div class="avatar">${spriteSVG((SPRITES[agent.archetype] || SPRITES.scientist), paletteFor(agent.archetype, agent.accent), 40)}</div>
         <div class="who">
           <div class="name">${escapeHtml(agent.name)}${god}</div>
+          ${agent.badge ? `<div class="look-badge">${escapeHtml(agent.badge)}</div>` : ""}
           <div class="chip ${agent.status.status}"><span class="px"></span>${escapeHtml(agent.status.label)}</div>
         </div>
       </div>
@@ -527,7 +838,7 @@ function renderFile(agent) {
       <span class="accent-dot"></span>
       <div>
         <div class="name">${escapeHtml(agent.name)}</div>
-        <div class="role">${escapeHtml(agent.title)}${compact ? " · click to open file" : " · click to hide"}</div>
+        <div class="role">${escapeHtml(agent.title)}${agent.badge ? " · " + escapeHtml(agent.badge) : ""}${compact ? " · click to open file" : " · click to hide"}</div>
       </div>
     </div>
     <p class="file-blurb">${escapeHtml(agent.blurb || "")}</p>
@@ -696,20 +1007,218 @@ function setAgentStatus(id, status, label) {
 function fillSellers(items, selected) {
   const el = els.seller();
   el.innerHTML = "";
-  items.forEach((s) => {
+  const attack = (items || []).filter((s) => !String(s.id || "").startsWith("market_"));
+  attack.forEach((s) => {
     const opt = document.createElement("option");
     opt.value = s.id;
     opt.textContent = s.label || `${s.id} · ${s.attack_name || "clean"}`;
     el.appendChild(opt);
   });
   el.value = selected;
-  if (!el.value && items[0]) el.value = items[0].id;
+  if (!el.value && attack[0]) el.value = attack[0].id;
+}
+
+function fillMerchants(items) {
+  const el = document.getElementById("marketStalls");
+  if (!el) return;
+  if (!items || !items.length) {
+    el.textContent = "Five honest shops stock the same families. Buyer visits all of them.";
+    return;
+  }
+  el.innerHTML = items
+    .map((s) => {
+      const color = ACCENTS[s.accent] || ACCENTS.peach;
+      return `<span class="stall-chip" style="--accent:${color}">${escapeHtml(s.badge || s.name || s.id)}</span>`;
+    })
+    .join("");
+  const row = document.getElementById("stallRow");
+  if (row) {
+    row.innerHTML = items
+      .map((s) => {
+        const color = ACCENTS[s.accent] || ACCENTS.peach;
+        const mark = (s.badge || s.name || "?").slice(0, 1);
+        return `<div class="mini-stall" style="--accent:${color}" title="${escapeHtml(s.name || s.id)}"><span>${escapeHtml(mark)}</span></div>`;
+      })
+      .join("");
+  }
+}
+
+function paintStore(card) {
+  const store = document.getElementById("store");
+  const sign = document.getElementById("storeSign");
+  if (!store || !card) return;
+  const accent = ACCENTS[card.accent] || ACCENTS.peach;
+  store.style.setProperty("--shop", accent);
+  const attack = Array.isArray(card.properties)
+    ? (card.properties.find((p) => p[0] === "attack") || [])[1]
+    : card.attack_class;
+  store.classList.toggle("hostile", Boolean(attack && attack !== "clean"));
+  const badge = card.badge || "SHOP";
+  const name = String(card.name || "Seller").split("(")[0].trim();
+  if (sign) sign.textContent = `${badge} · ${name}`;
+}
+
+function paintStoreFromFloor() {
+  const seller = state.floor?.agents?.find((a) => a.id === "seller");
+  if (seller) paintStore(seller);
+}
+
+function nearSpot(id, spot, slack = 6) {
+  const here = state.place[id];
+  if (!here || !spot) return false;
+  return Math.abs(here.x - spot.x) <= slack && Math.abs(here.y - spot.y) <= slack;
+}
+
+async function sellerGoDesk() {
+  if (nearSpot("seller", HOME.seller, 4)) {
+    face("seller", "left");
+    setPose("seller", "idle");
+    return;
+  }
+  await walkTo("seller", HOME.seller);
+  face("seller", "left");
+  setPose("seller", "idle");
+}
+
+async function sellerComeOut() {
+  if (nearSpot("seller", SPOTS.greet, 6) || nearSpot("seller", SPOTS.floorSeller, 6)) {
+    face("seller", "left");
+    return;
+  }
+  setAgentStatus("seller", "working", "coming out");
+  setTicker("store owner comes out from the counter");
+  await walkTo("seller", SPOTS.greet);
+  face("seller", "left");
+}
+
+async function meetOnFloor() {
+  await Promise.all([
+    walkTo("buyer", SPOTS.floorBuyer),
+    (async () => {
+      if (nearSpot("seller", HOME.seller, 5)) await sellerComeOut();
+      await walkTo("seller", SPOTS.floorSeller);
+    })(),
+  ]);
+  faceEachOther("buyer", "seller");
+}
+
+function restyleSeller(card) {
+  if (!card) return;
+  const agent = state.floor?.agents?.find((a) => a.id === "seller");
+  if (agent) {
+    if (card.archetype) agent.archetype = card.archetype;
+    if (card.accent) agent.accent = card.accent;
+    if (card.badge) agent.badge = card.badge;
+    if (card.name) agent.name = String(card.name).split("(")[0].trim();
+  }
+  paintStore(card);
+  const node = actorEl("seller");
+  if (!node) return;
+  const archetype = card.archetype || agent?.archetype || "shopkeep";
+  const accent = card.accent || agent?.accent || "peach";
+  node.style.setProperty("--accent", ACCENTS[accent] || ACCENTS.peach);
+  const wrap = node.querySelector(".sprite-wrap");
+  if (wrap) wrap.innerHTML = framesMarkup(archetype, accent);
+  const plate = node.querySelector(".nameplate");
+  if (plate) plate.textContent = String(card.name || agent?.name || "Seller").split("(")[0].trim();
+}
+
+async function swapStore(card) {
+  setBanner("STORE SWAP");
+  setTicker("buyer steps out — new shop rolling in");
+  await Promise.all([
+    walkTo("buyer", SPOTS.aisle),
+    sellerGoDesk(),
+  ]);
+  face("buyer", "right");
+  const store = document.getElementById("store");
+  store?.classList.add("swapping");
+  audio.mail();
+  await sleep(180);
+  restyleSeller(card);
+  puffAt("seller", "gold", 8);
+  store?.classList.remove("swapping");
+  setTicker("store owner comes out from the counter");
+  await Promise.all([
+    walkTo("buyer", SPOTS.catalog),
+    sellerComeOut(),
+  ]);
+  await meetOnFloor();
+  setPose("seller", "idle");
+  setTicker(`${card?.badge || "shop"} is open`);
+}
+
+async function hireSwap() {
+  state.selected = "seller";
+  if (state.running) {
+    await loadFloor();
+    paintStoreFromFloor();
+    return;
+  }
+  const here = state.place.buyer;
+  const inShop = here && here.x >= SHOP_EDGE;
+  if (inShop) {
+    setTicker("buyer leaves the shop");
+    await Promise.all([
+      walkTo("buyer", SPOTS.aisle),
+      sellerGoDesk(),
+    ]);
+  }
+  const store = document.getElementById("store");
+  store?.classList.add("swapping");
+  audio.mail();
+  await sleep(160);
+  await loadFloor();
+  paintStoreFromFloor();
+  store?.classList.remove("swapping");
+  setBanner("NEW SHOP");
+  puffAt("seller", "gold", 8);
+  setTicker("store owner comes out from the counter");
+  await Promise.all([
+    walkTo("buyer", SPOTS.catalog),
+    sellerComeOut(),
+  ]);
+  await meetOnFloor();
+}
+
+function setFloorMode(mode) {
+  state.mode = mode === "market" ? "market" : "attack";
+  const attackBtn = document.getElementById("modeAttack");
+  const marketBtn = document.getElementById("modeMarket");
+  if (attackBtn && marketBtn) {
+    attackBtn.classList.toggle("active", state.mode === "attack");
+    marketBtn.classList.toggle("active", state.mode === "market");
+    attackBtn.setAttribute("aria-pressed", String(state.mode === "attack"));
+    marketBtn.setAttribute("aria-pressed", String(state.mode === "market"));
+  }
+  const hire = document.getElementById("hireField");
+  const marketField = document.getElementById("marketField");
+  if (hire) hire.hidden = state.mode === "market";
+  if (marketField) marketField.hidden = state.mode !== "market";
+  document.getElementById("office")?.classList.toggle("market", state.mode === "market");
+  const stallRow = document.getElementById("stallRow");
+  if (stallRow) stallRow.hidden = state.mode !== "market";
+  const go = document.getElementById("go");
+  if (go) go.textContent = state.mode === "market" ? "Shop the market" : "Authorize checkout";
+  const sub = document.getElementById("floorSub");
+  if (sub) {
+    sub.textContent = state.mode === "market"
+      ? "Buyer walks out, the shop swaps, buyer walks in. GOD settles the winner."
+      : "Kernel office · advisor office · one tall shop. The kernel decides if money moves.";
+  }
+  const ticker = document.getElementById("ticker");
+  if (ticker && !state.running) {
+    ticker.textContent = state.mode === "market"
+      ? "marketplace idle · click Shop the market"
+      : "floor idle · click Authorize to roll cameras";
+  }
+  loadFloor().catch(() => {});
 }
 
 function setOutcome(kind, title, detail) {
   const el = els.outcome();
   el.className = `panel ${kind}`;
-  el.innerHTML = `<div class="title">${escapeHtml(title)}</div><div class="detail">${escapeHtml(detail || "")}</div>`;
+  el.innerHTML = `<div class="title">${escapeHtml(title)}</div><div class="detail">${escapeHtml(detail || "").replace(/\n/g, "<br>")}</div>`;
 }
 
 function setMeta(rows) {
@@ -738,7 +1247,7 @@ function setFloorView(mode) {
   const pane = document.getElementById("talkPane");
   if (wrap) wrap.dataset.view = next;
   if (pane) pane.hidden = next !== "chat";
-  document.querySelectorAll(".view-btn").forEach((btn) => {
+  document.querySelectorAll(".view-btn[data-view]").forEach((btn) => {
     const active = btn.dataset.view === next;
     btn.classList.toggle("active", active);
     btn.setAttribute("aria-pressed", active ? "true" : "false");
@@ -773,7 +1282,7 @@ function renderInspectBody(id, spot) {
     return data.items.map((item) => `
       <article class="inspect-card">
         <div class="title">${escapeHtml(item.title)}</div>
-        <div class="meta">${escapeHtml(item.price)} · stock ${item.stock} · ${escapeHtml(String(item.category || "—"))}${item.wireless ? " · wireless" : ""}</div>
+        <div class="meta">${item.seller ? escapeHtml(item.seller) + " · " : ""}${escapeHtml(item.price)} · stock ${item.stock} · ${escapeHtml(String(item.category || "—"))}${item.wireless ? " · wireless" : ""}</div>
         <div class="desc">${escapeHtml(item.description || "")}</div>
         <div class="meta">${item.reviews ? `${item.reviews} reviews${item.synthetic_reviews ? ` (${item.synthetic_reviews} synthetic)` : ""}` : "no reviews"}</div>
       </article>
@@ -912,7 +1421,7 @@ function messagesFromStep(step) {
     if (accept) msgs.unshift({ who: "buyer", text: accept[0], kind: "aside" });
   }
   if (!msgs.length) {
-    const who = ["checkout", "refuse", "done"].includes(step.phase) ? "kernel" : "narrator";
+    const who = ["checkout", "refuse", "done", "compare"].includes(step.phase) ? "kernel" : "narrator";
     const text = detail ? `${title} — ${detail}` : title;
     msgs.push({ who, text, kind: "beat" });
   }
@@ -1044,7 +1553,7 @@ async function sendHome({ instant = false } = {}) {
 async function choreograph(phase) {
   if (phase === "setup" || phase === "intent") {
     setBanner("BRIEFING");
-    setTicker("buyer walks to advisor");
+    setTicker("buyer checks in with advisor");
     focusCamera(["buyer", "llm"], 1.04);
     setAgentStatus("buyer", "thinking", "asking");
     if (defaultStatus("llm")[0] !== "ghost") setAgentStatus("llm", "thinking", "thinking");
@@ -1057,47 +1566,73 @@ async function choreograph(phase) {
     return;
   }
   if (phase === "discovery") {
-    setBanner("CATALOG");
-    setTicker("buyer is browsing the shelf");
-    focusCamera(["buyer"], 1.05);
+    setBanner("IN STORE");
+    setTicker("buyer walks into the shop and reads the shelf");
+    focusCamera(["buyer", "seller"], 1);
     setAgentStatus("buyer", "working", "browsing");
     setPose("llm", "idle");
-    await walkTo("buyer", SPOTS.advisorDoor);
-    await walkTo("buyer", SPOTS.catalog);
+    await walkTo("buyer", SPOTS.aisle);
+    await walkTo("buyer", SPOTS.storeDoor);
+    setTicker("store owner comes out from the counter");
+    await Promise.all([
+      walkTo("buyer", SPOTS.catalog),
+      sellerComeOut(),
+    ]);
     face("buyer", "right");
+    face("seller", "left");
     puffAt("buyer", "gold", 6);
     shineOn("buyer");
     return;
   }
   if (phase === "negotiate") {
-    setBanner("NEGOTIATING");
-    setTicker("buyer and seller meet on the floor");
+    setBanner("ON THE FLOOR");
+    setTicker("they step onto the shop floor to talk");
     if (kernelArmed()) {
       setWatching(true);
       setAgentStatus("kernel", "waiting", "watching");
     }
     setAgentStatus("buyer", "working", "haggling");
     setAgentStatus("seller", "working", "quoting");
-    await Promise.all([
-      walkTo("buyer", SPOTS.meetBuyer),
-      walkTo("seller", SPOTS.meetSeller),
-    ]);
-    focusCamera(["buyer", "seller"], 1.06);
+    await meetOnFloor();
     faceEachOther("buyer", "seller");
     setPose("buyer", "talk");
     setPose("seller", "talk");
     flyEnvelope();
     return;
   }
+  if (phase === "stall") {
+    setBanner("THIS SHOP");
+    setTicker("handshake on the shop floor — money still waits");
+    setAgentStatus("buyer", "success", "noted");
+    setAgentStatus("seller", "waiting", "waiting");
+    await meetOnFloor();
+    faceEachOther("buyer", "seller");
+    puffAt("buyer", "gold", 6);
+    return;
+  }
+  if (phase === "compare") {
+    setBanner("COMPARE");
+    setTicker("buyer leaves the shops. GOD is reading the table");
+    setWatching(true);
+    setAgentStatus("kernel", "working", "comparing");
+    setAgentStatus("buyer", "waiting", "waiting");
+    await Promise.all([
+      walkTo("buyer", SPOTS.aisle),
+      sellerGoDesk(),
+    ]);
+    await walkTo("buyer", SPOTS.kernelDoor);
+    focusCamera(["kernel", "buyer"], 1.05);
+    face("buyer", "left");
+    setPose("kernel", "talk");
+    shineOn("kernel");
+    return;
+  }
   if (phase === "agree") {
     setBanner("HANDSHAKE");
-    setTicker("they think they have a deal");
+    setTicker("they think they have a deal on the shop floor");
     setAgentStatus("buyer", "success", "deal");
     setAgentStatus("seller", "waiting", "waiting");
-    await Promise.all([
-      walkTo("buyer", SPOTS.meetBuyer),
-      walkTo("seller", SPOTS.meetSeller),
-    ]);
+    await meetOnFloor();
     faceEachOther("buyer", "seller");
     puffAt("buyer", "mint", 8);
     puffAt("seller", "mint", 8);
@@ -1105,15 +1640,17 @@ async function choreograph(phase) {
   }
   if (phase === "checkout") {
     setBanner("VAULT CHECK");
-    setTicker("buyer is at the kernel door");
+    setTicker("buyer leaves the shop for the kernel door");
     setWatching(false);
     setAgentStatus("kernel", "working", "checking");
     setAgentStatus("buyer", "waiting", "at the door");
     setDoor(true);
     await Promise.all([
-      walkTo("buyer", SPOTS.kernelDoor),
-      walkTo("seller", HOME.seller),
+      walkTo("buyer", SPOTS.aisle),
+      sellerGoDesk(),
     ]);
+    await walkTo("buyer", SPOTS.kernelDoor);
+    face("seller", "left");
     focusCamera(["kernel", "buyer"], 1.05);
     face("buyer", "left");
     setPose("kernel", "talk");
@@ -1125,15 +1662,17 @@ async function choreograph(phase) {
     setAgentStatus("buyer", "blocked", "stopped");
     setAgentStatus("seller", "blocked", "caught");
     if (kernelArmed()) {
-      setTicker("kernel leaves the office");
+      setTicker("kernel leaves the office for the store");
       setBreach(true);
       setDoor(true);
-      await walkKernelTo(SPOTS.intervene, { dash: true });
       await Promise.all([
-        walkTo("buyer", SPOTS.meetBuyer),
-        walkTo("seller", SPOTS.meetSeller),
+        walkKernelTo(SPOTS.intervene, { dash: true }),
+        walkTo("buyer", SPOTS.floorBuyer),
+        (async () => {
+          if (nearSpot("seller", HOME.seller, 5)) await sellerComeOut();
+          await walkTo("seller", SPOTS.floorSeller);
+        })(),
       ]);
-      focusCamera(["kernel", "buyer", "seller"], 1.07);
       face("kernel", "right");
       faceEachOther("buyer", "seller");
       setPose("kernel", "talk");
@@ -1153,9 +1692,12 @@ async function choreograph(phase) {
     setAgentStatus("buyer", "success", "done");
     puffAt("buyer", "mint", 12);
     puffAt("kernel", "gold", 10);
-    await walkKernelTo(HOME.kernel);
-    await walkTo("buyer", HOME.buyer);
-    await walkTo("seller", HOME.seller);
+    await Promise.all([
+      walkKernelTo(HOME.kernel),
+      walkTo("buyer", HOME.buyer),
+      sellerGoDesk(),
+    ]);
+    face("seller", "left");
     setDoor(false);
     focusCamera([], 1);
     face("kernel", "right");
@@ -1173,6 +1715,12 @@ async function applyPhase(phase) {
     setAgentStatus("buyer", "working", "haggling");
     setAgentStatus("seller", "working", "quoting");
     if (kernelArmed()) setAgentStatus("kernel", "waiting", "watching");
+  } else if (phase === "stall") {
+    setAgentStatus("buyer", "success", "noted");
+    setAgentStatus("seller", "waiting", "waiting");
+  } else if (phase === "compare") {
+    setAgentStatus("kernel", "working", "comparing");
+    setAgentStatus("buyer", "waiting", "waiting");
   } else if (phase === "agree") {
     setAgentStatus("buyer", "success", "deal");
     setAgentStatus("seller", "waiting", "waiting");
@@ -1209,12 +1757,14 @@ async function loadFloor() {
     goal,
     budget: String(budget),
     guardrails: rails,
+    mode: state.mode || "attack",
   });
   const res = await fetch("/v1/floor?" + qs.toString());
   const data = await res.json();
   state.floor = data;
   state.posePhase = null;
-  fillSellers(data.sellers, data.hired_seller_id);
+  fillSellers(data.sellers, state.mode === "market" ? els.seller().value : data.hired_seller_id);
+  fillMerchants(data.merchants);
   renderActors(data.agents);
   renderStrip(data.agents);
   const current = data.agents.find((a) => a.id === state.selected) || data.agents[2];
@@ -1224,6 +1774,7 @@ async function loadFloor() {
   if (state.inspect) {
     openInspect(state.inspect);
   }
+  paintStoreFromFloor();
   return data;
 }
 
@@ -1247,8 +1798,25 @@ async function refreshHealth() {
 async function replayStory(steps) {
   clearTalk();
   state.posePhase = null;
+  let lastStall = "";
   for (let i = 0; i < steps.length; i += 1) {
     const step = steps[i];
+    const stall = /^(?:Stall (\d+): )\s*(.+)$/.exec(step.title || "");
+    if (stall) {
+      const key = stall[1];
+      if (key !== lastStall) {
+        lastStall = key;
+        const who = stall[2];
+        const card = (state.floor?.merchants || []).find((m) =>
+          who.includes(m.name)
+          || (m.name || "").includes(who.split("(")[0].trim())
+          || who.includes(m.id)
+        ) || { name: who, badge: `S${key}`, accent: "peach", archetype: "shopkeep" };
+        await swapStore(card);
+      }
+      state.posePhase = null;
+    }
+    if (step.phase === "compare") state.posePhase = null;
     await applyPhase(step.phase);
     setBeat((step.title || "").replace(/^\d+[a-z]?\. /, ""));
     const msgs = messagesFromStep(step);
@@ -1360,6 +1928,109 @@ async function authorize() {
   }
 }
 
+async function shopMarket() {
+  const btn = document.getElementById("go");
+  btn.disabled = true;
+  state.running = true;
+  setOutcome("idle", "Shopping the market…", "Buyer walks out, the shop swaps, buyer walks in. GOD settles only the winner.");
+  setMeta([]);
+  clearTalk();
+  setBreach(false);
+  audio.ensure();
+  state.posePhase = null;
+  resetStatuses();
+  await sendHome({ instant: true });
+  setPlace("buyer", SPOTS.entrance, { instant: true });
+  setBanner("MARKET");
+  setTicker("buyer is walking onto the market floor");
+  focusCamera(["buyer"], 1.04);
+  appendTalk({ who: "narrator", text: "Buyer is walking every stall…", kind: "beat" }, { fresh: false });
+  await walkTo("buyer", HOME.buyer);
+  try {
+    const res = await fetch("/v1/market/shop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        goal: els.goal().value,
+        budget: Number(els.budget().value || 15000),
+        guardrails: els.rails().value === "true",
+      }),
+    });
+    const data = await res.json();
+    const setup = (data.story || []).find((s) => s.phase === "setup");
+    const talkMatch = setup && /Talk:\s*([^·]+)/.exec(setup.detail || "");
+    const talkEl = document.getElementById("talkModeLabel");
+    if (talkEl) {
+      talkEl.textContent = `live · ${(talkMatch ? talkMatch[1] : "rules talk").trim()}`;
+    }
+    await replayStory(data.story || []);
+    await loadFloor();
+    const winner = data.winner || {};
+    setMeta([
+      ["Winner", winner.seller_name || "—"],
+      ["SKU", data.product_title || "—"],
+      ["Closed", data.amount_minor ? money(data.amount_minor) : "—"],
+      ["Best deal", data.got_best_deal ? "yes" : "no"],
+      ["Stalls", String(data.stalls_visited || 0)],
+      ["Guardrails", data.guardrails ? "ON" : "OFF"],
+    ]);
+
+    if (!data.allowed) {
+      setOutcome("bad", "NO DEAL · " + (data.refusal_rule || "no handshake"), data.message || "No stall met the buyer. Razorpay was not called.");
+      await applyPhase("refuse");
+      setBeat("Marketplace closed without a winner.");
+      return;
+    }
+    if (!data.razorpay_order_id) {
+      setOutcome("ok", "BEST DEAL SETTLED", data.message || "Kernel settled the winning stall.");
+      await applyPhase("done");
+      setBeat("GOD settled the cheapest closed handshake.");
+      return;
+    }
+    setOutcome("warn", "Kernel allowed the winner", "Opening Razorpay Checkout…");
+    await applyPhase("done");
+    setBeat("Kernel allowed — checkout is opening for the winner.");
+    const options = {
+      key: data.razorpay_key_id,
+      amount: data.amount_minor,
+      currency: data.currency || "INR",
+      name: "Kavach",
+      description: data.product_title || "Marketplace winner",
+      order_id: data.razorpay_order_id,
+      handler: async function (response) {
+        const confirm = await fetch("/v1/checkout/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(response),
+        });
+        const settled = await confirm.json();
+        if (!confirm.ok) {
+          setOutcome("bad", "Capture failed", settled.detail || JSON.stringify(settled));
+          return;
+        }
+        setOutcome("ok", "SETTLED via Razorpay", `Order ${settled.kavach_order_id} · ${settled.state}`);
+        setMeta([
+          ["Kavach order", settled.kavach_order_id],
+          ["State", settled.state],
+          ["Winner", winner.seller_name || "—"],
+          ["Payment", response.razorpay_payment_id],
+        ]);
+      },
+      theme: { color: "#1A1320" },
+    };
+    const rzp = new Razorpay(options);
+    rzp.on("payment.failed", (resp) => {
+      setOutcome("bad", "Payment failed", (resp.error && resp.error.description) || "Checkout failed");
+    });
+    rzp.open();
+  } catch (err) {
+    setOutcome("bad", "Request failed", String(err));
+  } finally {
+    btn.disabled = false;
+    state.running = false;
+  }
+}
+
 function wire() {
   document.getElementById("envelope").innerHTML = envelopeSVG();
   ["catalog", "mailbox", "vault", "board"].forEach((id) => {
@@ -1404,8 +2075,7 @@ function wire() {
   });
 
   els.seller().addEventListener("change", () => {
-    state.selected = "seller";
-    loadFloor().catch(() => {});
+    hireSwap().catch(() => {});
   });
   els.rails().addEventListener("change", () => {
     document.getElementById("railsPill").textContent = els.rails().value === "true" ? "ON" : "OFF";
@@ -1414,7 +2084,9 @@ function wire() {
   els.goal().addEventListener("change", () => loadFloor().catch(() => {}));
   els.budget().addEventListener("change", () => loadFloor().catch(() => {}));
 
-  document.getElementById("go").onclick = authorize;
+  document.getElementById("go").onclick = () => (state.mode === "market" ? shopMarket() : authorize());
+  document.getElementById("modeAttack")?.addEventListener("click", () => setFloorMode("attack"));
+  document.getElementById("modeMarket")?.addEventListener("click", () => setFloorMode("market"));
   document.getElementById("viewFloor")?.addEventListener("click", () => setFloorView("floor"));
   document.getElementById("viewChat")?.addEventListener("click", () => setFloorView("chat"));
   setFloorView(state.view);

@@ -11,6 +11,7 @@ from .cli_view import (
     print_audit,
     print_banner,
     print_eval_summary,
+    print_market_result,
     print_result,
     print_sellers,
     print_story,
@@ -28,6 +29,7 @@ examples:
   kavach sellers
   kavach tui
   kavach serve
+  kavach market
   kavach eval --scenarios 40
 """
 
@@ -96,6 +98,38 @@ def demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def market_cmd(args: argparse.Namespace) -> int:
+    console = make_console(plain=args.plain)
+    config = _load_config()
+    _emit_config_warnings(config, console)
+    guardrails = config.guardrails if args.guardrails is None else args.guardrails == "on"
+    db = Database(":memory:")
+    buyer, sellers = seed_world(db, products_per_seller=8)
+    keys = {buyer.id: KeyPair(), "kernel": KeyPair(), **{s.id: KeyPair() for s in sellers}}
+    from .agents.marketplace import MarketplaceRun
+
+    print_banner(
+        console,
+        goal=args.goal,
+        budget=args.budget,
+        seller_id="marketplace",
+        seller_label="five honest stalls · comparison shopping",
+        guardrails=guardrails,
+        llm_label=config.llm_label,
+    )
+    console.print("[dim]Buyer is walking every stall…[/]")
+    result = MarketplaceRun(db, keys, guardrails=guardrails, config=config).run(
+        goal_text=args.goal,
+        budget=args.budget,
+        talk_seed=args.seed,
+    )
+    print_story(console, result)
+    print_market_result(console, result)
+    print_audit(console, db.audit_events())
+    db.close()
+    return 0
+
+
 def sellers_cmd(args: argparse.Namespace) -> int:
     console = make_console(plain=args.plain)
     db = Database(":memory:")
@@ -154,6 +188,11 @@ def main() -> int:
     dm.add_argument("--guardrails", choices=("on", "off"), default=None, help="override GUARDRAILS env (on|off)")
 
     sub.add_parser("sellers", parents=[common], help="list demo sellers and their attack classes")
+    mk = sub.add_parser("market", parents=[common], help="one buyer shops every honest stall and settles the best deal")
+    mk.add_argument("--goal", default="Find a wireless audio product")
+    mk.add_argument("--budget", type=int, default=15000, metavar="CENTS")
+    mk.add_argument("--guardrails", choices=("on", "off"), default=None)
+    mk.add_argument("--seed", type=int, default=11)
     sub.add_parser("tui", parents=[common], help="open the live 3-pane interface (press R to run, Q to quit)")
 
     srv = sub.add_parser("serve", parents=[common], help="run the FastAPI guardrail gateway (Razorpay-ready)")
@@ -170,6 +209,8 @@ def main() -> int:
         return demo(args)
     if args.command == "sellers":
         return sellers_cmd(args)
+    if args.command == "market":
+        return market_cmd(args)
     if args.command == "tui":
         console = make_console(plain=args.plain)
         _emit_config_warnings(_load_config(), console)

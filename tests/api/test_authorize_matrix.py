@@ -91,6 +91,24 @@ def test_floor_roster_tracks_hired_seller(seller_id: str):
     assert kernel["can_move_money"] is True
 
 
+def test_each_seller_has_a_unique_floor_look():
+    from kavach.agents.roster import SELLER_LOOKS
+
+    client, _ = _client()
+    looks = []
+    for seller_id in SELLERS:
+        body = client.get("/v1/floor", params={"seller_id": seller_id, "guardrails": "on"}).json()
+        seller = next(agent for agent in body["agents"] if agent["id"] == "seller")
+        archetype, accent, badge = SELLER_LOOKS[seller_id]
+        assert seller["archetype"] == archetype
+        assert seller["accent"] == accent
+        assert seller["badge"] == badge
+        looks.append(archetype)
+    assert len(set(looks)) == len(SELLERS)
+    merchants = client.get("/v1/merchants").json()["merchants"]
+    assert {row["archetype"] for row in merchants} == {"sailor", "nordic", "neon", "ridge", "ember"}
+
+
 def test_sellers_endpoint_lists_all_nine():
     client, _ = _client()
     response = client.get("/v1/sellers")

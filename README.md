@@ -143,6 +143,7 @@ flowchart TB
     Intent[Intent parsing]
     Neg[Negotiation]
     LLMAdapt[LLM adapter — Claude Haiku / Ollama]
+    Memory[Working memory + SQLite RAG]
     Val[validators — clamp LLM output]
   end
 
@@ -177,6 +178,8 @@ flowchart TB
   Orch --> Neg
   Intent --> LLMAdapt
   Neg --> LLMAdapt
+  LLMAdapt --> Memory
+  Memory --> Val
   LLMAdapt --> Val
   Orch --> Env
   Env --> Bus
@@ -203,7 +206,7 @@ flowchart TB
 | `kavach/adversarial/` | Attack definitions and the evaluation harness that compares guardrails ON vs OFF |
 | `kavach/ui/` | Live terminal UI (agent files / story / kernel audit) |
 | `kavach/api/` + `kavach/static/` | HTTP gateway and the browser **checkout sandbox** (`/demo/pay`) |
-| `kavach/cli.py` | Command-line entry: `demo`, `sellers`, `tui`, `serve`, `eval` |
+| `kavach/cli.py` | Command-line entry: `demo`, `sellers`, `market`, `tui`, `serve`, `eval` |
 
 ### 3.3 Data the kernel cares about
 
@@ -545,6 +548,8 @@ uv run kavach serve
 
 Set a brief and budget, hire a seller, click **Authorize checkout**. Watch the map, then switch to **Chat** for the full transcript. See [Live demo](#live-demo) and [§13](#13-razorpay-guardrail-gateway-real-world-rail) for Razorpay test keys.
 
+Toggle **Marketplace** on the same page for a separate sim: one buyer walks five honest stalls that stock the same product families at different list prices, haggles with each, then GOD (the kernel) settles **only the cheapest closed handshake**. Attack-floor sellers (`seller_01`–`seller_09`) stay on the Attack floor tab.
+
 ### Terminal UI
 
 ```bash
@@ -573,6 +578,7 @@ uv run pytest
 ```bash
 uv run kavach demo [options]
 uv run kavach sellers
+uv run kavach market [options]
 uv run kavach tui
 uv run kavach serve [--host 127.0.0.1] [--port 8080]
 uv run kavach eval [--scenarios N] [--output DIR] [--seed N]
@@ -596,6 +602,17 @@ uv run kavach demo --seller seller_04 --guardrails on
 uv run kavach demo --goal "Find a kitchen product" --budget 9000 --seller seller_01
 uv run kavach demo --plain --guardrails off --seller seller_03
 ```
+
+### `market`
+
+One buyer visits every honest stall (`market_01`–`market_05`), negotiates independently, then the kernel settles the best closed deal. Guardrails stay on the money path. This does **not** replace the attack matrix.
+
+```bash
+uv run kavach market
+uv run kavach market --goal "Find a wireless audio product" --budget 15000 --guardrails on
+```
+
+The comparison table shows each stall’s list vs closed price, who won, savings vs list / next-best, and cheaper lists that never closed.
 
 ---
 
@@ -673,6 +690,18 @@ Headline metrics:
 | Unbacked purchases | Money moved but audit replay failed |
 | Audit replay rate | Settled orders whose trail can be reconstructed |
 | Refusals by rule | Which GR codes fired |
+| Conversation mean score | Spoken-line quality (1.0 = no talk flags) |
+| Conversation flag rate | Share of runs with a talk finding |
+
+Conversation checks (always on, even in `rules_only`) parse buyer/seller quotes and flag:
+
+- `buyer_leaked_budget` — the shopper disclosed the ceiling
+- `followed_injection` — the shopper obeyed hostile seller instructions
+- `injection_visible_on_rails` — injection still reached the buyer with guardrails ON
+- `json_utterance` — spoken line was raw JSON
+- `empty_dialogue` — a negotiated run had no quotes
+
+Agents keep **working memory** of prior rounds and retrieve a small **SQLite vector-light RAG** (hashing-trick embeddings on `rag_docs`) over catalog copy and reviews. Retrieved text is firewall-scanned. Neither memory nor RAG can move money.
 
 ### What rules-only eval claims (honestly)
 
@@ -721,7 +750,7 @@ uv sync
 uv run kavach serve --host 127.0.0.1 --port 8080
 ```
 
-5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay). The page is the **checkout sandbox**: buyer, hired seller, kernel, and LLM advisor on a map, plus vault / catalog / audit stations. Set a brief, hire an attack class, click **Authorize checkout**.
+5. Open [http://127.0.0.1:8080/demo/pay](http://127.0.0.1:8080/demo/pay). The page is the **checkout sandbox**: buyer, hired seller, kernel, and LLM advisor on a map, plus vault / catalog / audit stations. Set a brief, hire an attack class, click **Authorize checkout**. Switch to **Marketplace** and click **Shop the market** to comparison-shop five honest stalls; the kernel still settles only the winner.
 
 ### What to try
 
@@ -740,7 +769,9 @@ uv run kavach serve --host 127.0.0.1 --port 8080
 | POST | `/v1/checkout/authorize` | negotiate → kernel authorize → maybe create Razorpay order |
 | POST | `/v1/checkout/confirm` | verify Checkout.js signature and settle |
 | POST | `/v1/webhooks/razorpay` | optional webhook (`payment.captured`) |
-| GET | `/v1/floor` | sandbox roster: buyer / seller / kernel / LLM advisor + station properties |
+| GET | `/v1/merchants` | honest marketplace stalls (`market_01`–`market_05`) |
+| POST | `/v1/market/shop` | visit every stall, then kernel-settle the cheapest handshake |
+| GET | `/v1/floor` | sandbox roster: buyer / seller / kernel / LLM advisor + station properties (`?mode=attack|market`) |
 | GET | `/demo/pay` | browser checkout sandbox |
 
 Local webhooks: Razorpay cannot reach `localhost` without a tunnel (e.g. ngrok). The demo page uses **`/v1/checkout/confirm`** so you do not need a public URL for v1.
@@ -763,13 +794,16 @@ kavach/
 │   ├── signing.py            ← Ed25519 helpers
 │   ├── world/
 │   │   ├── seed.py           ← catalog + adversarial sellers (named products)
+│   │   ├── rag.py            ← hashing-trick embeddings + SQLite retrieval
 │   │   └── …                 ← SQLite, replay, payment_refs
 │   ├── kernel/               ← firewall, mandates, policy, holds
 │   ├── protocol/             ← signed envelopes + bus
 │   ├── agents/
 │   │   ├── orchestrator.py   ← scenario story + buyer/seller dialogue
+│   │   ├── memory.py         ← working memory for one negotiation
+│   │   ├── conversation_eval.py ← spoken-line checks (budget leak, injection)
 │   │   ├── roster.py         ← per-agent files (identity · goal · runtime · skills)
-│   │   └── …                 ← LLM adapter, prompts, validators
+│   │   └── …                 ← LLM adapter, prompts
 │   ├── adversarial/          ← attacks + evaluation
 │   ├── payments/             ← Razorpay rail + fake for tests
 │   ├── api/                  ← FastAPI guardrail gateway (`/v1/floor` roster)

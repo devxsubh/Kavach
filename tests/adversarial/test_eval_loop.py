@@ -18,6 +18,8 @@ def test_eval_loop_full_seller_cycle_scorecard(monkeypatch):
     assert scorecard["unbacked_purchases"] == 0
     assert scorecard["audit_replay_rate"] == 1.0
     assert scorecard["attack_success_rate_guardrails_on"] <= scorecard["attack_success_rate_guardrails_off"]
+    assert scorecard["conversation_mean_score"] >= 0.9
+    assert "conversation_findings" in scorecard
 
     by_attack = scorecard["by_attack_class"]
     for attack_id in ("A-1", "A-2", "A-3", "A-4", "A-5", "A-6", "A-7", "A-8"):
@@ -53,5 +55,6 @@ def test_write_scorecard_artifacts(tmp_path: Path, monkeypatch):
     assert "Kavach Evaluation Scorecard" in text
     assert "rules_only" in text
     assert "Per-attack detail" in text
+    assert "Conversation checks" in text
     assert "A-3" in text
     assert "A-1/A-2" in text

@@ -24,6 +24,8 @@ PHASE_STYLE = {
     "refuse": "bold red",
     "walk": "yellow",
     "fail": "red",
+    "stall": "yellow",
+    "compare": "magenta",
 }
 
 
@@ -84,6 +86,9 @@ def print_result(console: Console, result: ScenarioResult) -> None:
     table.add_row("Seller", result.attack_class or "clean / honest")
     table.add_row("Guardrails", "ON" if result.guardrails else "OFF")
     table.add_row("LLM", "helped" if result.llm_used else "rules only")
+    table.add_row("Talk score", f"{result.conversation_score:.2f}")
+    if result.conversation_findings:
+        table.add_row("Talk flags", ", ".join(result.conversation_findings))
     table.add_row("Attack won", "yes" if result.attack_succeeded else "no")
     table.add_row("Audit replay", "ok" if result.audit_replay_ok else "broken")
     if result.refusal_rule:
@@ -116,6 +121,7 @@ def print_tips(console: Console, *, seller_id: str, guardrails: bool) -> None:
     console.print(f"  [cyan]uv run kavach demo --guardrails {flip} --seller {escape(seller_id)}[/]")
     console.print("  [cyan]uv run kavach sellers[/]")
     console.print("  [cyan]uv run kavach tui[/]   [dim](press R)[/]")
+    console.print("  [cyan]uv run kavach market[/]  [dim]shop every honest stall[/]")
     console.print()
 
 
@@ -127,6 +133,8 @@ def print_sellers(console: Console, sellers: list[Any], attack_lookup: dict[str,
     table.add_column("What they try")
     table.add_column("Blocked by", style="dim")
     for seller in sellers:
+        if str(seller.id).startswith("market_"):
+            continue
         if seller.attack_class and seller.attack_class in attack_lookup:
             attack = attack_lookup[seller.attack_class]
             table.add_row(seller.id, seller.name, f"{attack.attack_id} · {attack.name}", attack.mechanism, ", ".join(attack.blocked_by))
@@ -135,6 +143,7 @@ def print_sellers(console: Console, sellers: list[Any], attack_lookup: dict[str,
     console.print()
     console.print(table)
     console.print("[dim]Example:[/] [cyan]uv run kavach demo --seller seller_04 --guardrails on[/]")
+    console.print("  [cyan]uv run kavach market[/]  [dim]shop every honest stall, then settle the winner[/]")
     console.print("[dim]Then flip:[/] [cyan]uv run kavach demo --seller seller_04 --guardrails off[/]")
     console.print()
 
@@ -152,6 +161,8 @@ def print_eval_summary(console: Console, scorecard: dict[str, Any], *, md_path: 
         ("unbacked_purchases", "Unbacked purchases"),
         ("audit_replay_rate", "Audit replay rate"),
         ("refusal_rate_guardrails_on", "Refusal rate · ON"),
+        ("conversation_mean_score", "Conversation score"),
+        ("conversation_flag_rate", "Conversation flags"),
     ]
     for key, label in interesting:
         value = scorecard.get(key)
@@ -182,7 +193,43 @@ def print_eval_summary(console: Console, scorecard: dict[str, Any], *, md_path: 
         console.print()
         console.print(attacks)
 
+    talk = scorecard.get("conversation_findings") or {}
+    flags = Table(title="Conversation checks", show_lines=False)
+    flags.add_column("Finding")
+    flags.add_column("Count", justify="right")
+    if talk:
+        for code, count in talk.items():
+            flags.add_row(code, str(count))
+    else:
+        flags.add_row("(none)", "0")
+    console.print()
+    console.print(flags)
+
     console.print()
     console.print(f"[green]Wrote[/] {md_path}")
     console.print(f"[green]Wrote[/] {json_path}")
     console.print()
+
+
+def print_market_result(console: Console, result: Any) -> None:
+    table = Table(title="Marketplace comparison", show_lines=False)
+    table.add_column("Stall")
+    table.add_column("SKU")
+    table.add_column("List", justify="right")
+    table.add_column("Closed", justify="right")
+    table.add_column("Policy")
+    for stall in result.stalls:
+        closed = money(stall.negotiated_minor) if stall.accepted else stall.notes
+        marker = " ★" if result.winner and stall.seller_id == result.winner.seller_id else ""
+        table.add_row(
+            stall.seller_name + marker,
+            stall.product_title or "—",
+            money(stall.list_price_minor) if stall.list_price_minor else "—",
+            closed,
+            stall.policy_profile,
+        )
+    console.print()
+    console.print(table)
+    console.print()
+    console.print(Panel(escape(result.summary), title="Did the buyer get the best deal?", border_style="green" if result.got_best_deal else "yellow"))
+

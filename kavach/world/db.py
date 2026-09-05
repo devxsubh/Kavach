@@ -55,6 +55,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
  seq INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, actor TEXT NOT NULL,
  event_type TEXT NOT NULL, payload_json TEXT NOT NULL, prev_hash TEXT NOT NULL, hash TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS rag_docs (
+ id TEXT PRIMARY KEY, kind TEXT NOT NULL, ref_id TEXT NOT NULL, seller_id TEXT,
+ text TEXT NOT NULL, embedding_json TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS rag_docs_kind ON rag_docs(kind);
+CREATE INDEX IF NOT EXISTS rag_docs_seller ON rag_docs(seller_id);
 """
 
 
@@ -76,10 +82,15 @@ class Database:
             seller.reputation_seed, seller.pubkey, int(seller.is_adversarial), seller.attack_class, now_utc().isoformat()))
 
     def add_product(self, product: Product) -> None:
+        from .rag import embed_text, index_product, product_blob
+
+        embedding = product.embedding or embed_text(product_blob(product))
+        stored = product.model_copy(update={"embedding": embedding})
         self.conn.execute("INSERT OR REPLACE INTO products VALUES (?,?,?,?,?,?,?,?,?)", (
-            product.id, product.seller_id, product.title, product.description, product.list_price_minor,
-            product.stock, json.dumps(product.attributes, sort_keys=True),
-            json.dumps(product.embedding) if product.embedding is not None else None, now_utc().isoformat()))
+            stored.id, stored.seller_id, stored.title, stored.description, stored.list_price_minor,
+            stored.stock, json.dumps(stored.attributes, sort_keys=True),
+            json.dumps(stored.embedding), now_utc().isoformat()))
+        index_product(self.conn, stored)
 
     def add_buyer(self, buyer: Buyer) -> None:
         self.conn.execute("INSERT OR REPLACE INTO buyers VALUES (?,?,?,?,?)", (
@@ -87,6 +98,17 @@ class Database:
 
     def add_review(self, review: Any) -> None:
         self.conn.execute("INSERT OR REPLACE INTO reviews VALUES (?,?,?,?,?,?,?)", (review.id, review.product_id, review.author_id, review.rating, review.body, int(review.is_synthetic), review.created_at.isoformat()))
+        row = self.conn.execute("SELECT seller_id FROM products WHERE id=?", (review.product_id,)).fetchone()
+        from .rag import index_review
+
+        index_review(
+            self.conn,
+            review_id=review.id,
+            product_id=review.product_id,
+            seller_id=row["seller_id"] if row else None,
+            body=review.body,
+            rating=review.rating,
+        )
 
     def list_reviews(self, product_id: str) -> list[Any]:
         from ..advanced_models import Review

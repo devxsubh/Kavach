@@ -17,6 +17,12 @@ class AuthorizeRequest(BaseModel):
     guardrails: bool | None = None
 
 
+class MarketShopRequest(BaseModel):
+    goal: str = "Find a wireless audio product"
+    budget: int = Field(default=15000, gt=0)
+    guardrails: bool | None = None
+
+
 class ClientPaymentConfirm(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str

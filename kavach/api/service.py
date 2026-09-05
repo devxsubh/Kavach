@@ -73,7 +73,7 @@ def _messages_from_story(story: list[dict[str, str]]) -> list[dict[str, str]]:
             msgs.append({"who": "buyer", "kind": "OFFER", "text": buyer.group(1), "phase": phase})
         if seller:
             msgs.append({"who": "seller", "kind": "COUNTER", "text": seller.group(1), "phase": phase})
-        if not buyer and not seller and phase in {"checkout", "refuse", "done"}:
+        if not buyer and not seller and phase in {"checkout", "refuse", "done", "compare"}:
             text = f"{title} — {detail}" if detail else title
             msgs.append({"who": "kernel", "kind": "NOTE", "text": text, "phase": phase})
     return msgs
@@ -84,7 +84,10 @@ class CheckoutGateway:
         self.state = state
 
     def list_sellers(self) -> list[dict[str, Any]]:
-        return [seller_card(s) for s in self.state.sellers]
+        return [seller_card(s) for s in self.state.sellers if not str(s.id).startswith("market_")]
+
+    def list_merchants(self) -> list[dict[str, Any]]:
+        return [seller_card(s) for s in self.state.sellers if str(s.id).startswith("market_")]
 
     def _remember_run(
         self,
@@ -114,30 +117,61 @@ class CheckoutGateway:
         goal: str = DEFAULT_GOAL,
         budget: int = DEFAULT_BUDGET,
         guardrails: bool | None = None,
+        mode: str = "attack",
     ) -> dict[str, Any]:
         """Live contents of every floor station / room for the demo inspect UI."""
         rails = self.state.config.guardrails if guardrails is None else guardrails
         buyer = self.state.db.get_buyer(self.state.buyer_id)
-        hired = next((s for s in self.state.sellers if s.id == seller_id), self.state.sellers[0])
-        products = [p for p in self.state.db.search_products() if p.seller_id == hired.id]
-        catalog: list[dict[str, Any]] = []
-        for product in products[:12]:
-            reviews = self.state.db.list_reviews(product.id)
-            catalog.append(
-                {
-                    "id": product.id,
-                    "title": product.title,
-                    "price": _money(product.list_price_minor),
-                    "price_minor": product.list_price_minor,
-                    "stock": product.stock,
-                    "category": product.attributes.get("category"),
-                    "wireless": product.attributes.get("wireless"),
-                    "color": product.attributes.get("color"),
-                    "description": product.description[:220],
-                    "reviews": len(reviews),
-                    "synthetic_reviews": sum(1 for r in reviews if r.is_synthetic),
-                }
-            )
+        if mode == "market":
+            products = [p for p in self.state.db.search_products() if str(p.seller_id).startswith("market_")]
+            products.sort(key=lambda p: (str((p.attributes or {}).get("family") or ""), p.seller_id))
+            catalog: list[dict[str, Any]] = []
+            for product in products:
+                seller = self.state.db.get_seller(product.seller_id)
+                catalog.append(
+                    {
+                        "id": product.id,
+                        "title": product.title,
+                        "seller": seller.name,
+                        "family": (product.attributes or {}).get("family"),
+                        "price": _money(product.list_price_minor),
+                        "price_minor": product.list_price_minor,
+                        "stock": product.stock,
+                        "category": product.attributes.get("category"),
+                        "wireless": product.attributes.get("wireless"),
+                        "color": product.attributes.get("color"),
+                        "description": product.description[:220],
+                        "reviews": 0,
+                        "synthetic_reviews": 0,
+                    }
+                )
+            hired_name = "marketplace"
+            hired_id = "market"
+            catalog_blurb = "Same families, five honest shops. Shop around; kernel settles one winner."
+        else:
+            hired = next((s for s in self.state.sellers if s.id == seller_id), self.state.sellers[0])
+            products = [p for p in self.state.db.search_products() if p.seller_id == hired.id]
+            catalog = []
+            for product in products[:12]:
+                reviews = self.state.db.list_reviews(product.id)
+                catalog.append(
+                    {
+                        "id": product.id,
+                        "title": product.title,
+                        "price": _money(product.list_price_minor),
+                        "price_minor": product.list_price_minor,
+                        "stock": product.stock,
+                        "category": product.attributes.get("category"),
+                        "wireless": product.attributes.get("wireless"),
+                        "color": product.attributes.get("color"),
+                        "description": product.description[:220],
+                        "reviews": len(reviews),
+                        "synthetic_reviews": sum(1 for r in reviews if r.is_synthetic),
+                    }
+                )
+            hired_name = hired.name
+            hired_id = hired.id
+            catalog_blurb = f"Products from {hired.name}. Discovery binds the cart (GR-8)."
 
         last = self.state.last_run or {}
         story = last.get("story") or []
@@ -167,8 +201,8 @@ class CheckoutGateway:
             "budget": _money(budget),
             "budget_minor": budget,
             "guardrails": rails,
-            "hired_seller_id": hired.id,
-            "hired_seller_name": hired.name,
+            "hired_seller_id": hired_id,
+            "hired_seller_name": hired_name,
             "last_run": {
                 "product_title": last.get("product_title"),
                 "attack_class": last.get("attack_class"),
@@ -184,7 +218,7 @@ class CheckoutGateway:
                 "catalog": {
                     "id": "catalog",
                     "name": "Catalog shelf",
-                    "blurb": f"Products from {hired.name}. Discovery binds the cart (GR-8).",
+                    "blurb": catalog_blurb,
                     "items": catalog,
                 },
                 "mailbox": {
@@ -248,7 +282,7 @@ class CheckoutGateway:
                         {
                             "id": "desks",
                             "name": "Buyer & seller desks",
-                            "detail": f"Buyer brief: {goal} · budget {_money(budget)}. Hired: {hired.id}.",
+                            "detail": f"Buyer brief: {goal} · budget {_money(budget)}. Hired: {hired_id}.",
                         },
                     ],
                 },
@@ -262,22 +296,31 @@ class CheckoutGateway:
         goal: str = DEFAULT_GOAL,
         budget: int = DEFAULT_BUDGET,
         guardrails: bool | None = None,
+        mode: str = "attack",
     ) -> dict[str, Any]:
         buyer = self.state.db.get_buyer(self.state.buyer_id)
+        floor_seller = seller_id
+        if mode == "market":
+            merchants = [s for s in self.state.sellers if str(s.id).startswith("market_")]
+            floor_seller = merchants[0].id if merchants else seller_id
         floor = build_floor(
             config=self.state.config,
             buyer=buyer,
             sellers=self.state.sellers,
-            seller_id=seller_id,
+            seller_id=floor_seller,
             goal=goal,
             budget=budget,
             guardrails=guardrails,
         )
+        floor["sellers"] = [s for s in floor["sellers"] if not str(s["id"]).startswith("market_")]
+        floor["merchants"] = self.list_merchants()
+        floor["mode"] = mode
         floor["world"] = self.world_snapshot(
             seller_id=seller_id,
             goal=goal,
             budget=budget,
             guardrails=guardrails,
+            mode=mode,
         )
         return floor
 
@@ -388,6 +431,86 @@ class CheckoutGateway:
             message="kernel allowed — complete payment in Razorpay Checkout",
             story=story,
         )
+
+    def shop_market(
+        self,
+        *,
+        goal: str,
+        budget: int,
+        guardrails: bool | None = None,
+    ) -> dict[str, Any]:
+        """Visit every honest stall, then let the kernel settle the best handshake."""
+        from ..agents.marketplace import MarketplaceRun
+
+        rails = self.state.config.guardrails if guardrails is None else guardrails
+        use_rzp = self.state.config.payment_rail == "razorpay" and self.state.rail is not None
+        market = MarketplaceRun(
+            self.state.db,
+            self.state.keys,
+            guardrails=rails,
+            config=self.state.config,
+            payment_rail="razorpay" if use_rzp else "simulated",
+        )
+        result = market.run(goal_text=goal, budget=budget, scenario_id="api_market", settle=not use_rzp)
+        story = [{"phase": s.phase, "title": s.title, "detail": s.detail} for s in result.story]
+        payload = result.model_dump(mode="json")
+        payload["story"] = story
+        payload["allowed"] = bool(result.order_id) and not result.refusal_rule
+        payload["message"] = result.summary
+        payload["amount_minor"] = result.spent_minor or (result.winner.negotiated_minor if result.winner else 0)
+        payload["kavach_order_id"] = result.order_id
+        payload["razorpay_order_id"] = None
+        payload["razorpay_key_id"] = None
+        payload["currency"] = "INR"
+        synthetic = ScenarioResult(
+            scenario_id=result.scenario_id,
+            guardrails=result.guardrails,
+            attack_class=None,
+            settled=result.settled,
+            attack_succeeded=False,
+            refusal_rule=result.refusal_rule,
+            spent_minor=result.spent_minor,
+            goal_text=result.goal_text,
+            budget_ceiling_minor=result.budget_ceiling_minor,
+            product_title=result.product_title,
+            product_id=result.product_id,
+            seller_id=result.winner.seller_id if result.winner else "",
+            negotiated_minor=result.winner.negotiated_minor if result.winner else 0,
+            llm_used=result.llm_used,
+            order_id=result.order_id,
+            story=result.story,
+        )
+        self._remember_run(
+            scenario=synthetic,
+            story=story,
+            allowed=payload["allowed"],
+            amount_minor=payload["amount_minor"],
+        )
+        if not payload["allowed"] or not use_rzp or not result.order_id:
+            if payload["allowed"] and not use_rzp:
+                payload["message"] = result.summary
+            return payload
+        order = self.state.db.get_order(result.order_id)
+        amount = order.unit_price_minor * order.qty
+        external = self.state.rail.create_order(
+            amount_minor=amount,
+            currency="INR",
+            receipt=order.id.replace("_", "")[:40],
+            notes={"kavach_order_id": order.id, "mode": "market"},
+        )
+        self.state.db.save_payment_ref(
+            order_id=order.id,
+            provider=external.provider,
+            external_id=external.external_id,
+            amount_minor=external.amount_minor,
+            currency=external.currency,
+            status="CREATED",
+        )
+        payload["razorpay_order_id"] = external.external_id
+        payload["razorpay_key_id"] = getattr(self.state.rail, "key_id", None)
+        payload["amount_minor"] = amount
+        payload["message"] = result.summary + "\nKernel allowed — complete payment in Razorpay Checkout."
+        return payload
 
     def confirm_client_payment(self, order_id: str, payment_id: str, signature: str) -> dict[str, Any]:
         if self.state.rail is None:

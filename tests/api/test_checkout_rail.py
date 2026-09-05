@@ -135,6 +135,8 @@ def test_demo_pay_page_renders():
     assert "Guardrail checkout" in page.text
     assert "kernel decides if money moves" in page.text
     assert "Authorize checkout" in page.text
+    assert "Marketplace" in page.text
+    assert "modeMarket" in page.text
     assert "Command Center" in page.text
     assert "viewFloor" in page.text
     assert "viewChat" in page.text
@@ -198,3 +200,52 @@ def test_authorize_fills_mailbox_and_audit_board():
     assert world["stations"]["mailbox"]["messages"]
     assert world["stations"]["board"]["events"]
     assert world["last_run"]["refusal_rule"] == "GR-9"
+
+
+def test_market_shop_settles_one_winner_and_creates_one_razorpay_order():
+    fake = FakeRazorpayRail()
+    cfg = _config()
+    state = build_gateway_state(cfg, rail=fake)
+    gateway = CheckoutGateway(state)
+    payload = gateway.shop_market(goal="Find a wireless audio product", budget=15000, guardrails=True)
+    assert payload["allowed"] is True
+    assert payload["stalls_visited"] == 5
+    assert payload["winner"]["seller_id"].startswith("market_")
+    assert payload["got_best_deal"] is True
+    assert payload["razorpay_order_id"] is not None
+    assert len(fake.created) == 1
+    orders = state.db.conn.execute("SELECT seller_id, state FROM orders").fetchall()
+    assert len(orders) == 1
+    assert orders[0]["seller_id"] == payload["winner"]["seller_id"]
+    assert orders[0]["state"] == "AUTHORIZED"
+
+
+def test_floor_market_mode_lists_merchants_not_attack_sellers():
+    fake = FakeRazorpayRail()
+    cfg = _config()
+    state = build_gateway_state(cfg, rail=fake)
+    app = create_app(cfg, gateway=CheckoutGateway(state))
+    client = TestClient(app)
+    sellers = client.get("/v1/sellers").json()["sellers"]
+    assert all(not row["id"].startswith("market_") for row in sellers)
+    merchants = client.get("/v1/merchants").json()["merchants"]
+    assert [row["id"] for row in merchants] == [
+        "market_01",
+        "market_02",
+        "market_03",
+        "market_04",
+        "market_05",
+    ]
+    floor = client.get("/v1/floor", params={"mode": "market", "guardrails": "on"})
+    body = floor.json()
+    assert body["mode"] == "market"
+    assert [row["id"] for row in body["merchants"]] == [row["id"] for row in merchants]
+    catalog = body["world"]["stations"]["catalog"]["items"]
+    assert {item.get("seller") for item in catalog} >= {
+        "Harbor Goods",
+        "Northline Mart",
+        "Pulse Depot",
+        "Ridge Exchange",
+        "Ember Stall",
+    }
+    assert all(not row["id"].startswith("market_") for row in body["sellers"])

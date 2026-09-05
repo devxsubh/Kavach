@@ -19,6 +19,34 @@ ATTACK_BY_ID = {attack.attack_id: attack for attack in ATTACKS}
 DEFAULT_GOAL = "Find a wireless audio product"
 DEFAULT_BUDGET = 15000
 
+# Unique floor silhouette per hire / stall. (archetype, accent, badge)
+SELLER_LOOKS: dict[str, tuple[str, str, str]] = {
+    "seller_01": ("shopkeep", "mint", "CLEAN"),
+    "seller_02": ("toxin", "moss", "A-1"),
+    "seller_03": ("silver", "lilac", "A-2"),
+    "seller_04": ("bait", "coral", "A-3"),
+    "seller_05": ("faker", "sky", "A-4"),
+    "seller_06": ("goldbug", "gold", "A-5"),
+    "seller_07": ("sybil", "peach", "A-6"),
+    "seller_08": ("stuffer", "lemon", "A-7"),
+    "seller_09": ("glitch", "ink", "A-8"),
+    "market_01": ("sailor", "navy", "HARBOR"),
+    "market_02": ("nordic", "frost", "NORTH"),
+    "market_03": ("neon", "lilac", "PULSE"),
+    "market_04": ("ridge", "moss", "RIDGE"),
+    "market_05": ("ember", "ember", "EMBER"),
+}
+
+
+def seller_look(seller: Seller) -> tuple[str, str, str]:
+    if seller.id in SELLER_LOOKS:
+        return SELLER_LOOKS[seller.id]
+    if str(seller.id).startswith("market_"):
+        return ("shopkeep", "peach", "SHOP")
+    if seller.is_adversarial:
+        return ("bait", "coral", seller.attack_class or "ATK")
+    return ("shopkeep", "mint", "SELL")
+
 
 def _money(minor: int) -> str:
     return f"${minor / 100:,.2f}"
@@ -45,6 +73,7 @@ def _attack_blurb(attack_class: str | None) -> dict[str, Any]:
 
 def seller_card(seller: Seller) -> dict[str, Any]:
     attack = _attack_blurb(seller.attack_class)
+    archetype, accent, badge = seller_look(seller)
     return {
         "id": seller.id,
         "name": seller.name,
@@ -56,7 +85,10 @@ def seller_card(seller: Seller) -> dict[str, Any]:
         "attack_name": attack["name"],
         "attack_mechanism": attack["mechanism"],
         "blocked_by": attack["blocked_by"],
-        "label": f"{seller.id} · {attack['name']}",
+        "archetype": archetype,
+        "accent": accent,
+        "badge": badge,
+        "label": f"{badge} · {attack['name']}",
     }
 
 
@@ -72,6 +104,7 @@ def buyer_desk(buyer: Buyer, *, goal: str, budget: int, llm_on: bool) -> dict[st
         "title": "Buyer",
         "accent": "sky",
         "archetype": "scientist",
+        "badge": "BUY",
         "status": _chip("idle", "idle"),
         "can_move_money": False,
         "blurb": "Shops inside a signed Intent mandate. Proposes — never settles.",
@@ -116,14 +149,17 @@ def buyer_desk(buyer: Buyer, *, goal: str, budget: int, llm_on: bool) -> dict[st
 
 def seller_desk(seller: Seller) -> dict[str, Any]:
     attack = _attack_blurb(seller.attack_class)
+    archetype, accent, badge = seller_look(seller)
     vibe = "Honest merchant" if not seller.is_adversarial else f"Red-team · {attack['id']}"
+    short = seller.name.split("(")[0].strip()
     return {
         "id": "seller",
         "seat": "desk-seller",
-        "name": seller.name.split("(")[0].strip(),
+        "name": short,
         "title": "Seller",
-        "accent": "coral" if seller.is_adversarial else "peach",
-        "archetype": "hacker" if seller.is_adversarial else "cat-villager",
+        "accent": accent,
+        "archetype": archetype,
+        "badge": badge,
         "status": _chip("idle", "idle"),
         "can_move_money": False,
         "blurb": attack["mechanism"],
@@ -132,6 +168,7 @@ def seller_desk(seller: Seller) -> dict[str, Any]:
             "identity": {
                 "who": seller.name,
                 "role": vibe,
+                "look": f"{badge} · {archetype}",
                 "policy": seller.policy_profile,
             },
             "goal": {
@@ -158,7 +195,7 @@ def seller_desk(seller: Seller) -> dict[str, Any]:
         "properties": [
             ("id", seller.id),
             ("attack", attack["id"] or "clean"),
-            ("policy", seller.policy_profile),
+            ("look", badge),
             ("floor", f"{int(seller.price_floor_pct * 100)}%"),
         ],
     }
@@ -173,6 +210,7 @@ def kernel_desk(*, guardrails: bool) -> dict[str, Any]:
         "title": "Guardrail kernel",
         "accent": "lemon",
         "archetype": "wizard",
+        "badge": "GOD",
         "status": _chip("idle", "idle") if guardrails else _chip("ghost", "disarmed"),
         "can_move_money": True,
         "blurb": "The only desk that can move money. GOD of this floor.",
@@ -216,6 +254,7 @@ def llm_desk(config: KavachConfig) -> dict[str, Any]:
         "title": "LLM advisor",
         "accent": "lilac",
         "archetype": "astronaut",
+        "badge": "LLM",
         "status": _chip("idle", "idle") if on else _chip("ghost", "offline"),
         "can_move_money": False,
         "blurb": "Suggests JSON. Validators clamp it. Never writes the world.",

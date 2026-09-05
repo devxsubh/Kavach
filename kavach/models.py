@@ -205,6 +205,10 @@ class ScenarioResult(BaseModel):
     budget_ceiling_minor: int = 0
     product_title: str = ""
     product_id: str = ""
+    seller_id: str = ""
+    negotiated_minor: int = 0
     llm_used: bool = False
     order_id: str | None = None
+    conversation_score: float = 1.0
+    conversation_findings: list[str] = Field(default_factory=list)
     story: list[StoryStep] = Field(default_factory=list)

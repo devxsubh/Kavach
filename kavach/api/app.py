@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from ..config import KavachConfig
 from ..exceptions import GuardrailViolation
-from .schemas import AuthorizeRequest, ClientPaymentConfirm, ScenarioRunRequest
+from .schemas import AuthorizeRequest, ClientPaymentConfirm, MarketShopRequest, ScenarioRunRequest
 from .service import CheckoutGateway, build_gateway_state
 
 
@@ -60,12 +60,17 @@ def create_app(
     def sellers():
         return {"sellers": app.state.gateway.list_sellers()}
 
+    @app.get("/v1/merchants")
+    def merchants():
+        return {"merchants": app.state.gateway.list_merchants()}
+
     @app.get("/v1/floor")
     def floor(
         seller_id: str = Query(default="seller_04"),
         goal: str = Query(default="Find a wireless audio product"),
         budget: int = Query(default=15000, gt=0),
         guardrails: str | None = Query(default=None),
+        mode: str = Query(default="attack"),
     ):
         rails = None if guardrails is None else guardrails != "off"
         return app.state.gateway.list_floor(
@@ -73,6 +78,7 @@ def create_app(
             goal=goal,
             budget=budget,
             guardrails=rails,
+            mode=mode if mode in {"attack", "market"} else "attack",
         )
 
     @app.post("/v1/scenarios/run")
@@ -84,6 +90,14 @@ def create_app(
             guardrails=body.guardrails,
         )
         return result.model_dump(mode="json")
+
+    @app.post("/v1/market/shop")
+    def shop_market(body: MarketShopRequest):
+        return app.state.gateway.shop_market(
+            goal=body.goal,
+            budget=body.budget,
+            guardrails=body.guardrails,
+        )
 
     @app.post("/v1/checkout/authorize")
     def authorize(body: AuthorizeRequest):

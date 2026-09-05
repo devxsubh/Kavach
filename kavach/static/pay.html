@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/floor.css?v=13" />
+  <link rel="stylesheet" href="/static/floor.css?v=23" />
 </head>
 <body data-seller="{{SELLER_ID}}" data-guardrails="{{GUARDRAILS}}">
   <div class="app">
     <header class="panel titlebar">
       <div>
         <h1>Kavach</h1>
-        <div class="sub">Agents negotiate. The kernel decides if money moves. · click any station to inspect it</div>
+        <div class="sub" id="floorSub">Kernel office · advisor office · one tall shop. The kernel decides if money moves.</div>
       </div>
       <div class="pills">
         <div class="pill"><span class="dot single" id="railDot"></span> Rail <strong id="railLabel">…</strong></div>
@@ -29,11 +29,19 @@
       <div class="floor-wrap" data-view="floor" id="floorWrap">
         <section class="panel floor-canvas" aria-label="Checkout map">
           <div class="floor-toolbar">
+            <div class="view-toggle" role="group" aria-label="Attack floor or marketplace">
+              <button type="button" class="view-btn active" id="modeAttack" aria-pressed="true">Attack floor</button>
+              <button type="button" class="view-btn" id="modeMarket" aria-pressed="false">Marketplace</button>
+            </div>
             <div class="view-toggle" role="group" aria-label="Floor or chat view">
               <button type="button" class="view-btn active" data-view="floor" id="viewFloor" aria-pressed="true">Floor</button>
               <button type="button" class="view-btn" data-view="chat" id="viewChat" aria-pressed="false">Chat</button>
             </div>
-            <div class="beat floor-beat" id="beat">Click vault, catalog, mailbox, audit — or Authorize to roll cameras.</div>
+            <div class="view-toggle" role="group" aria-label="Ledger inspect">
+              <button type="button" class="view-btn" data-inspect="vault" aria-label="Open vault">Vault</button>
+              <button type="button" class="view-btn" data-inspect="board" aria-label="Open audit board">Audit</button>
+            </div>
+            <div class="beat floor-beat" id="beat">Kernel and advisor keep their offices. The shop is the whole right wall.</div>
           </div>
           <div class="office" id="office">
             <div class="tiles" aria-hidden="true"></div>
@@ -43,48 +51,38 @@
               <div class="room-title">kernel office</div>
               <div class="watch-eye" id="watchEye">◉ watching</div>
               <div class="lamp kernel-lamp" aria-hidden="true"></div>
+              <div class="rug kernel-rug" aria-hidden="true"></div>
               <div class="furn desk"></div>
               <div class="furn chair"></div>
               <div class="furn plant"></div>
+              <div class="furn books" aria-hidden="true"></div>
               <div class="door" aria-hidden="true"></div>
               <div class="door-leaf" aria-hidden="true"></div>
             </button>
             <button type="button" class="room room-advisor hot-spot" data-inspect="advisor" aria-label="Open advisor booth">
-              <div class="room-title">advisor</div>
+              <div class="room-title">advisor office</div>
+              <div class="rug advisor-rug" aria-hidden="true"></div>
               <div class="furn desk wide"></div>
               <div class="furn chair"></div>
+              <div class="furn terminal" aria-hidden="true"></div>
             </button>
-            <div class="room room-vault">
-              <div class="room-title">vault</div>
-              <button type="button" class="station st-vault hot-spot" data-inspect="vault" aria-label="Open vault">
-                <div class="sprite"></div><div class="label">vault</div>
-              </button>
-              <button type="button" class="station st-board hot-spot" data-inspect="board" aria-label="Open audit board">
-                <div class="sprite"></div><div class="label">audit</div>
-              </button>
-            </div>
-            <div class="room room-catalog">
-              <div class="room-title">catalog</div>
-              <button type="button" class="station st-catalog hot-spot" data-inspect="catalog" aria-label="Open catalog shelf">
-                <div class="sprite"></div><div class="label">shelf</div>
-              </button>
-            </div>
-            <div class="room room-mail">
-              <div class="room-title">mailbox</div>
-              <button type="button" class="station st-mailbox hot-spot" data-inspect="mailbox" aria-label="Open mailbox">
-                <div class="sprite"></div><div class="label">offers</div>
-              </button>
-            </div>
-
-            <div class="hall">
-              <div class="room-title hall-title">negotiation floor</div>
-              <button type="button" class="furn table hot-spot" data-inspect="hall" data-spot="table" aria-label="Open deal table"></button>
+            <div class="aisle" id="aisle">
+              <div class="room-title">aisle</div>
+              <div class="runner" aria-hidden="true"></div>
               <button type="button" class="furn cooler hot-spot" data-inspect="hall" data-spot="cooler" aria-label="Open water cooler"></button>
               <div class="furn plant p2" aria-hidden="true"></div>
-              <button type="button" class="furn desk buyer-desk hot-spot" data-agent="buyer" data-inspect="hall" data-spot="desks" aria-label="Buyer desk"></button>
-              <div class="furn chair buyer-chair" aria-hidden="true"></div>
-              <button type="button" class="furn desk seller-desk hot-spot" data-agent="seller" data-inspect="hall" data-spot="desks" aria-label="Seller desk"></button>
-              <div class="furn chair seller-chair" aria-hidden="true"></div>
+            </div>
+
+            <div class="room room-store" id="store">
+              <div class="awning" aria-hidden="true"></div>
+              <div class="store-sign" id="storeSign">SHOP</div>
+              <div class="shop-counter" aria-hidden="true"></div>
+              <button type="button" class="station st-mailbox hot-spot" data-inspect="mailbox" aria-label="Open cash register">
+                <div class="sprite"></div>
+              </button>
+              <button type="button" class="station st-catalog hot-spot" data-inspect="catalog" aria-label="Open catalog shelf"></button>
+              <div class="store-door" aria-hidden="true"></div>
+              <div class="stall-row" id="stallRow" hidden></div>
             </div>
 
             <div class="spotlight" id="spotlight" aria-hidden="true"></div>
@@ -140,9 +138,13 @@
               <label for="budget">Budget (cents)</label>
               <input id="budget" type="number" min="100" step="100" value="15000" />
             </div>
-            <div class="field">
+            <div class="field" id="hireField">
               <label for="seller">Hire a seller</label>
               <select id="seller"></select>
+            </div>
+            <div class="field" id="marketField" hidden>
+              <label>Stalls</label>
+              <div class="stall-list" id="marketStalls">Five honest shops stock the same families. Buyer visits all of them.</div>
             </div>
             <div class="field">
               <label for="rails">Autonomy leash</label>
@@ -169,11 +171,11 @@
 
         <section class="panel compact" id="agentFile"></section>
 
-        <p class="links">Also: <a href="/health">/health</a> · <a href="/v1/floor">/v1/floor</a> · <a href="/v1/sellers">/v1/sellers</a> · <a href="/docs">/docs</a></p>
+        <p class="links">Also: <a href="/health">/health</a> · <a href="/v1/floor">/v1/floor</a> · <a href="/v1/sellers">/v1/sellers</a> · <a href="/v1/merchants">/v1/merchants</a> · <a href="/docs">/docs</a></p>
       </aside>
     </div>
   </div>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="/static/floor.js?v=13"></script>
+  <script src="/static/floor.js?v=23"></script>
 </body>
 </html>

@@ -40,6 +40,17 @@ def test_sellers_lists_attack_classes(monkeypatch, capsys):
     assert "seller_01" in out
     assert "seller_04" in out
     assert "Bait and switch" in out
+    assert "market_01" not in out
+    assert "Harbor Goods" not in out
+
+
+def test_market_shops_stalls_and_prints_comparison(monkeypatch, capsys):
+    assert run_cli(monkeypatch, ["market", "--plain", "--guardrails", "on"]) == 0
+    out = capsys.readouterr().out
+    assert "Harbor Goods" in out
+    assert "Marketplace comparison" in out
+    assert "Did the buyer get the best deal?" in out
+    assert "Winner:" in out
 
 
 def test_budget_extraction_attack_maps_to_untrusted_text_rules():
