@@ -14,20 +14,24 @@ This README explains **what Kavach is**, **how the pieces fit together**, **how 
 
 The browser sandbox at `/demo/pay` is the fastest way to see the claim: **agents propose, the kernel decides**.
 
-![Checkout sandbox — brief, negotiate, kernel allow, Razorpay Checkout](docs/demo/kavach-checkout.gif)
+![Checkout sandbox — brief, negotiate, kernel allow or refuse](docs/demo/kavach-checkout.gif)
 
-*Chat view: Harbor Soundbar Mini, intent locked (`audio`, `wireless=True`). Seller offers **$34.35**; the buyer LLM matches. Outcome: **Kernel allowed · Opening Razorpay Checkout…***
+*Attack floor with `seller_04` (**A-3** bait-and-switch): brief “Find a wireless audio product,” budget **$180**, then **Authorize checkout**. The buyer and seller walk the map and talk; when the signed price does not match the offer, **KERNEL STEPPING IN** — money never moves. ([Higher-quality MP4](docs/demo/kavach-checkout.mp4).)*
 
 What the clip shows:
 
 1. You set a **brief** (e.g. “Find a wireless audio product”) and a **budget**.
-2. You hire a seller — here `seller_02` (attack class **A-1**, injection in product text).
-3. Buyer and seller negotiate on the map; the LLM can write the buyer’s next line.
-4. Checkout hits the kernel. If the rules pass, **Razorpay Checkout** opens (test mode). If they fail, money never moves.
+2. You hire a seller — here `seller_04` (attack class **A-3**, bait-and-switch).
+3. Buyer and seller negotiate on the map; the LLM can advise, but never writes money.
+4. Checkout hits the kernel. Clean deals open **Razorpay Checkout** (test mode). Attacks like A-3 trip a guardrail (**GR-9** here) and payment is refused.
 
 ### The map
 
 The pixel-art floor is a **checkout diagram**, not a workplace sim. Four actors, four rooms:
+
+![Checkout sandbox floor — kernel, advisor, buyer home, shop](docs/demo/checkout-sandbox-floor.png)
+
+*Full sandbox: kernel office, advisor office, buyer home (vault + audit on the floor), aisle, and one tall shop with catalog shelf + reviews behind the **i** button.*
 
 | Place | What you see |
 |---|---|
@@ -35,7 +39,7 @@ The pixel-art floor is a **checkout diagram**, not a workplace sim. Four actors,
 | **Advisor office** (top middle) | Optional LLM. Click for backend, wallet remaining, review counts. |
 | **Buyer home** (bottom left) | Buyer starts here and **walks out** to shop. Two floor boxes: **Vault** (their money) and **Audit** (past buying experiences). |
 | **Aisle** | Path from home to the shop. |
-| **Shop** (full right wall) | One tall store: **counter + till**, **catalog shelf**, **review wall**, open **floor**. The hired seller idles behind the counter and **comes out** when the buyer enters. |
+| **Shop** (full right wall) | One tall store: **counter + till**, **catalog shelf**, reviews behind the corner **i** button, open **floor**. The hired seller idles behind the counter and **comes out** when the buyer enters. |
 
 Two modes on the same page:
 

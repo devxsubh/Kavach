@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/floor.css?v=37" />
+  <link rel="stylesheet" href="/static/floor.css?v=39" />
 </head>
 <body data-seller="{{SELLER_ID}}" data-guardrails="{{GUARDRAILS}}">
   <div class="app">
@@ -103,8 +103,9 @@
                 <span class="shelf-row" aria-hidden="true"><i></i><i></i><i></i></span>
                 <span class="shelf-caption">shelf</span>
               </button>
-              <button type="button" class="station st-reviews hot-spot" data-inspect="reviews" aria-label="Open review wall">
-                <div class="review-wall-copy" id="reviewWall">reviews</div>
+              <button type="button" class="station st-reviews hot-spot" data-inspect="reviews" aria-label="Open reviews" title="Reviews">
+                <span class="info-i" aria-hidden="true">i</span>
+                <span class="info-count" id="reviewWall">0</span>
               </button>
               <div class="store-door" aria-hidden="true"></div>
               <div class="stall-row" id="stallRow" hidden></div>
@@ -201,6 +202,6 @@
     </div>
   </div>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="/static/floor.js?v=37"></script>
+  <script src="/static/floor.js?v=39"></script>
 </body>
 </html>

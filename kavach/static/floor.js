@@ -316,7 +316,7 @@ const SPOTS = {
   storeDoor: { x: 58, y: 48 },
   kernelDoor: { x: 16, y: 40 },
   catalog: { x: 90, y: 48 },
-  reviews: { x: 68, y: 66 },
+  reviews: { x: 92, y: 88 },
   mailbox: { x: 74, y: 32 },
   vault: { x: 8, y: 82 },
   board: { x: 16, y: 82 },
@@ -444,8 +444,8 @@ function framesFor(archetype, accent, size) {
 
 function stationSVG(kind) {
   if (kind === "catalog") {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect width="16" height="16" fill="#1A1320"/>
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+    <rect width="16" height="16" fill="#1A1320"/>
       <rect x="1" y="1" width="14" height="14" fill="#8B6F47"/>
       <rect x="2" y="3" width="12" height="2" fill="#FFD93D"/>
       <rect x="2" y="6" width="5" height="3" fill="#FFF8E7"/>
@@ -1025,15 +1025,9 @@ function paintStore(card) {
   const wall = document.getElementById("reviewWall");
   if (wall) {
     const notes = state.floor?.world?.stations?.reviews?.items || [];
-    if (!notes.length) {
-      wall.innerHTML = `<span class="review-empty">no reviews yet</span>`;
-    } else {
-      wall.innerHTML = notes.slice(0, 4).map((n) => {
-        const mark = n.synthetic ? "!" : "*";
-        const body = String(n.body || "").replace(/\s+/g, " ").trim();
-        return `<span class="review-line"><b>${mark}${n.rating}</b> ${escapeHtml(body)}</span>`;
-      }).join("");
-    }
+    const n = notes.length;
+    wall.textContent = n > 99 ? "99+" : String(n);
+    wall.title = n ? `${n} reviews` : "no reviews yet";
   }
 }
 
@@ -1356,7 +1350,7 @@ function renderInspectBody(id, spot) {
         <div class="inspect-stat"><span class="k">mode</span><span class="v">${escapeHtml(data.mode)}</span></div>
         <div class="inspect-stat"><span class="k">backend</span><span class="v">${escapeHtml(data.backend)}</span></div>
         <div class="inspect-stat"><span class="k">wallet</span><span class="v">${escapeHtml(data.wallet_available || "—")}</span></div>
-        <div class="inspect-stat"><span class="k">reviews</span><span class="v">${escapeHtml(String(data.review_total ?? "—"))}${data.synthetic_reviews ? ` (${data.synthetic_reviews} synth)` : ""}</span></div>
+        <div class="inspect-stat"><span class="k">reviews</span><span class="v">${escapeHtml(String(data.review_total ?? "—"))}</span></div>
       </div>
       <article class="inspect-card">
         <div class="title">${escapeHtml(data.llm || "Advisor")}</div>
@@ -1485,8 +1479,8 @@ function showSpeech(who, text) {
 function appendTalk(msg, { fresh = true } = {}) {
   const host = els.talk();
   host.querySelectorAll(".msg.fresh").forEach((n) => n.classList.remove("fresh"));
-  const row = document.createElement("div");
-  row.className = `msg ${msg.who}${msg.kind === "aside" ? " aside" : ""}${fresh ? " fresh" : ""}`;
+    const row = document.createElement("div");
+    row.className = `msg ${msg.who}${msg.kind === "aside" ? " aside" : ""}${fresh ? " fresh" : ""}`;
   const label = msg.who === "buyer" ? "buyer" : msg.who === "seller" ? "seller" : msg.who === "kernel" ? "kernel" : "";
   row.innerHTML = `${label ? `<div class="who">${label}</div>` : ""}<div class="bubble">${escapeHtml(msg.text)}</div>`;
   host.appendChild(row);
@@ -1916,21 +1910,21 @@ async function authorize() {
       ["Amount", data.amount_minor ? money(data.amount_minor) : "—"],
     ]);
 
-    if (!data.allowed) {
-      setOutcome("bad", "REFUSED · " + (data.refusal_rule || "blocked"), data.message || "Kernel blocked checkout. Razorpay was not called.");
+        if (!data.allowed) {
+          setOutcome("bad", "REFUSED · " + (data.refusal_rule || "blocked"), data.message || "Kernel blocked checkout. Razorpay was not called.");
       await applyPhase("refuse");
       setBeat("Kernel stepped in — read the last yellow line.");
-      return;
-    }
-    if (!data.razorpay_order_id) {
-      setOutcome("ok", "ALLOWED · simulated ledger", data.message || "Settled without Razorpay.");
+          return;
+        }
+        if (!data.razorpay_order_id) {
+          setOutcome("ok", "ALLOWED · simulated ledger", data.message || "Settled without Razorpay.");
       await applyPhase("done");
-      setBeat("Deal closed on the simulated ledger.");
-      return;
-    }
-    setOutcome("warn", "Kernel allowed", "Opening Razorpay Checkout…");
+          setBeat("Deal closed on the simulated ledger.");
+          return;
+        }
+        setOutcome("warn", "Kernel allowed", "Opening Razorpay Checkout…");
     await applyPhase("done");
-    setBeat("Kernel allowed — checkout is opening.");
+        setBeat("Kernel allowed — checkout is opening.");
     const options = {
       key: data.razorpay_key_id,
       amount: data.amount_minor,

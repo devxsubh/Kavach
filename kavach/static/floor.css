@@ -645,51 +645,50 @@ body {
 .floor-box.active-spot { box-shadow: 0 0 0 2px var(--sky), 2px 2px 0 rgba(26, 19, 32, 0.35); }
 
 .room-store .st-reviews {
-  left: 6%;
-  top: 54%;
-  right: 24%;
-  width: auto;
-  height: 30%;
-  background: #fff8e7;
-  border: 2px solid var(--ink-900);
-  box-shadow: inset 0 -2px 0 #e8d9a0;
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
-  padding: 6px 7px;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-.review-wall-copy {
-  font-family: var(--display);
-  font-size: 7px;
-  line-height: 11px;
-  color: var(--ink-700);
-  text-align: left;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  left: auto;
+  right: 4%;
+  top: auto;
+  bottom: 5%;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  background: #fff8e7;
+  border: 2px solid var(--ink-900);
+  box-shadow: 2px 2px 0 rgba(26, 19, 32, 0.35);
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 8;
 }
-.review-wall-copy .review-line {
-  display: block;
-  width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+.room-store .st-reviews:hover {
+  filter: brightness(1.06);
 }
-.review-wall-copy .review-line b {
-  font-weight: normal;
+.room-store .st-reviews .info-i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-900);
+  background: var(--sky);
   color: var(--ink-900);
-  margin-right: 3px;
+  font-family: var(--display);
+  font-size: 8px;
+  line-height: 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 }
-.review-wall-copy .review-empty {
-  color: var(--ink-500);
+.room-store .st-reviews .info-count {
+  font-family: var(--display);
+  font-size: 6px;
+  line-height: 8px;
+  color: var(--ink-700);
+  pointer-events: none;
 }
 .price-board {
   position: absolute;
@@ -2019,11 +2018,12 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 12px 12px;
+  padding: 10px 14px 12px 12px;
   background: var(--cream-50);
   border: 3px solid var(--ink-900);
   box-shadow: 6px 6px 0 var(--ink-900);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .inspect[hidden] { display: none !important; }
@@ -2033,21 +2033,30 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
+}
+
+.inspect-head > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .inspect-kicker {
   font-family: var(--display);
-  font-size: 8px;
+  font-size: 7px;
+  line-height: 1.4;
   color: var(--ink-500);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 
 .inspect-head h3 {
   margin: 4px 0 0;
   font-family: var(--display);
-  font-size: 12px;
-  line-height: 1.3;
+  font-size: 11px;
+  line-height: 1.35;
   color: var(--ink-900);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-close {
@@ -2065,23 +2074,29 @@ button {
 .inspect-blurb {
   margin: 0;
   font-family: var(--mono);
-  font-size: 16px;
-  line-height: 1.25;
+  font-size: 15px;
+  line-height: 1.3;
   color: var(--ink-700);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  padding-right: 2px;
 }
 
 .inspect-body {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 2px solid var(--ink-300);
   background: var(--paper-100);
-  padding: 8px;
+  padding: 8px 10px;
+  box-sizing: border-box;
 }
 
 .inspect-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -2090,47 +2105,71 @@ button {
   border: 2px solid var(--ink-900);
   background: var(--cream-50);
   padding: 6px 8px;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .inspect-stat .k {
   display: block;
   font-family: var(--display);
-  font-size: 8px;
+  font-size: 7px;
+  line-height: 1.45;
+  letter-spacing: 0;
   color: var(--ink-500);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-stat .v {
+  display: block;
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1.2;
   color: var(--ink-900);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .inspect-card {
   border: 2px solid var(--ink-900);
   background: var(--cream-50);
-  padding: 8px;
+  padding: 8px 10px;
   margin: 0 0 8px;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .inspect-card .title {
   font-family: var(--ui);
   font-size: 15px;
   font-weight: 700;
+  line-height: 1.25;
   color: var(--ink-900);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-card .meta {
   font-family: var(--mono);
   font-size: 15px;
+  line-height: 1.25;
   color: var(--ink-700);
   margin-top: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-card .desc {
   font-family: var(--mono);
   font-size: 14px;
+  line-height: 1.35;
   color: var(--ink-500);
   margin-top: 6px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-mail {
@@ -2138,6 +2177,9 @@ button {
   padding: 6px 8px;
   margin: 0 0 8px;
   background: var(--cream-50);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-mail.buyer { border-color: var(--sky); }
@@ -2146,38 +2188,54 @@ button {
 
 .inspect-mail .who {
   font-family: var(--display);
-  font-size: 8px;
+  font-size: 7px;
+  line-height: 1.4;
+  letter-spacing: 0;
   color: var(--ink-500);
 }
 
 .inspect-mail .text {
   font-family: var(--mono);
   font-size: 15px;
+  line-height: 1.3;
   color: var(--ink-900);
   margin-top: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .inspect-rule {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 6px;
   padding: 4px 0;
   border-bottom: 1px solid var(--ink-300);
   font-family: var(--mono);
   font-size: 14px;
+  min-width: 0;
 }
 
 .inspect-rule code {
   font-family: var(--display);
-  font-size: 8px;
+  font-size: 7px;
+  line-height: 1.4;
+  letter-spacing: 0;
   color: var(--ink-900);
+}
+
+.inspect-rule span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .inspect-empty {
   font-family: var(--mono);
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.3;
   color: var(--ink-500);
   padding: 12px 4px;
+  overflow-wrap: anywhere;
 }
 
 .hot-spot.active-spot {
